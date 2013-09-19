@@ -36,10 +36,12 @@ function krnBootstrap()      // Page 8.
    krnKeyboardDriver.driverEntry();                    // Call the driverEntry() initialization routine.
    krnTrace(krnKeyboardDriver.status);
 
-   //
-   // ... more?
-   //
-
+   // Load the status bar display.
+   krnTrace("Loading the status bar device driver.");
+   krnStatusBarDriver = new DeviceDriverStatusBar();
+   krnStatusBarDriver.driverEntry();
+   krnTrace(krnStatusBarDriver.status);
+   
    // Enable the OS Interrupts.  (Not the CPU clock interrupt, as that is done in the hardware sim.)
    krnTrace("Enabling the interrupts.");
    krnEnableInterrupts();
@@ -76,7 +78,7 @@ function krnOnCPUClockPulse()
        This is NOT the same as a TIMER, which causes an interrupt and is handled like other interrupts.
        This, on the other hand, is the clock pulse from the hardware (or host) that tells the kernel 
        that it has to look for interrupts and process them if it finds any.                           */
-
+	
     // Check for an interrupt, are any. Page 560
     if (_KernelInterruptQueue.getSize() > 0)    
     {
@@ -182,9 +184,38 @@ function krnTrace(msg)
    }
 }
    
-function krnTrapError(msg)
+function krnTrapError(msg) 
 {
     hostLog("OS ERROR - TRAP: " + msg);
-    // TODO: Display error on console, perhaps in some sort of colored screen. (Perhaps blue?)
-    krnShutdown();
+	// Display the error screen.
+	displayBSOD();
+	// Shutdown the kernel.
+	krnShutdown();
 }
+
+function displayBSOD() {
+	
+	_Console.clearScreen();
+	_Console.resetXY();
+	
+	_Canvas.style.backgroundColor = "blue";
+	_DrawingContext.strokeStyle = "white";
+	
+	_StdOut.putText("UNRECOVERABLE ERROR ENCOUNTERED.");
+	_StdIn.advanceLine();
+	_StdOut.putText("  %ERROR CODE: A0DEAF00 0BABE000");
+	_StdIn.advanceLine();
+	_StdOut.putText("TO AVOID ADDITIONAL LOSS OF DATA.")
+	_StdIn.advanceLine();
+	_StdOut.putText("PLEASE CONTACT OUR SUPPORT DEPARTMENT.");
+	_StdIn.advanceLine();
+	_StdOut.putText("PLEASE HAVE YOUR SUPPORT ID READY.");
+	_StdIn.advanceLine();
+	_StdOut.putText("FOR USERS WITHOUT A SUPPORT ID PLEASE GO TO ");
+	_StdIn.advanceLine();
+	_StdOut.putText("WWW.GOOGLE.COM UPON REBOOT.");
+	_StdIn.advanceLine();
+	_StdOut.putText("HOLD THE POWER BUTTON TO PERFORM A HARD RESET.");
+	_StdIn.advanceLine();
+
+};
