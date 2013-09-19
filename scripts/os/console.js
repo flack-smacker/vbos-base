@@ -36,24 +36,23 @@ function CLIconsole() {
        this.CurrentYPosition = this.CurrentFontSize;
     };
 	
-	/* Scroll the display the specified number of lines. */
-	this.scrollDisplay = function(n) {
-		// Calculate the vertical scroll amount.
-		var scrollY = this.LineHeight * n;
-		// Save the required portion of the display.
-		var saved = _DrawingContext.getImageData(
-				0, // x-coord of the origin
-				scrollY, // y-coord of the origin
-				500, // image width
-				this.CurrentYPosition - scrollY // image height
-		);
-		// Clear the screen.
-		this.clearScreen();
-		// "Scroll" up by drawing the image at the top of the screen.
-		_DrawingContext.putImageData(saved, 0, 0);
-		// Place the cursor at the correct position.
-		this.CurrentYPosition -= scrollY;
-	};
+    /* Scroll the display the specified number of lines. */
+    this.scrollDisplay = function(n) {
+    	// Calculate the vertical scroll amount.
+    	var scrollY = this.LineHeight * n;
+	// Save the required portion of the display.
+	var saved = _DrawingContext.getImageData(
+			0, // x-coord of the origin
+			scrollY, // y-coord of the origin
+			500, // image width
+			this.CurrentYPosition - scrollY); // image height
+	// Clear the screen.
+	this.clearScreen();
+	// "Scroll" up by drawing the image at the top of the screen.
+	_DrawingContext.putImageData(saved, 0, 0);
+	// Place the cursor at the correct position.
+	this.CurrentYPosition -= scrollY;
+    };
 	
 	/* Clear user input from the console and buffer. */
 	this.clearUserInput = function() {
@@ -167,7 +166,7 @@ function CLIconsole() {
        this.CurrentYPosition += _DefaultFontSize + _FontHeightMargin;
 	   
 	   if (this.CurrentYPosition > 500) {
-			this.scrollDisplay();
+		this.scrollDisplay(1);
 	   }
     };
 
