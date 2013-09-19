@@ -104,10 +104,24 @@ function shellInit() {
 	// load - validates the code in the user program input area
 	sc = new ShellCommand();
 	sc.command = "load";
-	sc.description = " - Validates the user code in the program input area.";
+	sc.description = " - Validates user program input.";
 	sc.function = shellValidateCode;
 	this.commandList[this.commandList.length] = sc;
-
+	
+	// BSOD - provide a mechanism for testing the kernel error trap function
+	sc = new ShellCommand();
+	sc.command = "implode";
+	sc.description = " - Causes a catastrophic unrecoverable error.";
+	sc.function = shellImplode;
+	this.commandList[this.commandList.length] = sc;
+	
+	// status - Allows the user to set the system status display.
+	sc = new ShellCommand();
+	sc.command = "status";
+	sc.description = "<string> - Sets the status display to <string>.";
+	sc.function = shellSetStatus;
+	this.commandList[this.commandList.length] = sc;
+	
     // processes - list the running processes and their IDs
     // kill <id> - kills the specified process id.
 
@@ -478,5 +492,17 @@ function shellValidateCode() {
 		_StdIn.putText("  Your program is valid. Good Job.");
 		_StdIn.advanceLine();
 		_StdIn.putText("  Whether it is correct remains to be seen.");
+	}
+}
+
+function shellImplode(args) {
+	krnTrapError(args[0]);
+}
+
+function shellSetStatus(args) {
+	if (args.length < 1) {
+		_StdIn.putText("Please supply a string.");
+	} else {
+		updateStatusMessage(args[0]);
 	}
 }

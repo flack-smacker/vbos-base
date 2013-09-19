@@ -19,7 +19,7 @@
 function hostInit()
 {
 	// Get a global reference to the canvas.  TODO: Move this stuff into a Display Device Driver, maybe?
-	_Canvas  = document.getElementById('display');
+	_Canvas = document.getElementById('display');
 
 	// Get a global reference to the drawing context.
 	_DrawingContext = _Canvas.getContext('2d');
@@ -28,8 +28,7 @@ function hostInit()
 	CanvasTextFunctions.enable(_DrawingContext);   // TODO: Text functionality is now built in to the HTML5 canvas. Consider using that instead.
 
 	// Get a global reference to the status bar display device.
-	_statusBar = document.getElementById("statusBar");
-	_statusBar.getContext('2d');
+	_statusBar = document.getElementById("statusBar").getContext('2d');
 
 	// Get a global reference to the user input area.
 	_userInputArea = document.getElementById("taProgramInput");
