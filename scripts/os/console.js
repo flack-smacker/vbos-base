@@ -37,7 +37,7 @@ function CLIconsole() {
     };
 	
 	/* Scroll the display the specified number of lines. */
-	this.scrollDisplay = function() {
+	this.scrollDisplay = function(n) {
 		// Calculate the vertical scroll amount.
 		var scrollY = this.LineHeight * n;
 		// Save the required portion of the display.
