@@ -3,7 +3,10 @@
 
    Requires global.js.
 
-   Routines for the hardware simulation, NOT for our client OS itself. In this manner, it's A LITTLE BIT like a hypervisor, in that the Document environment inside a browser is the "bare metal" (so to speak) for which we write code that hosts our client OS. But that analogy only goes so far, and the lines are blurred, because we are using JavaScript in both the host and client environments.
+   Routines for the hardware simulation, NOT for our client OS itself. In this manner, it's A LITTLE BIT like a
+   hypervisor, in that the Document environment inside a browser is the "bare metal" (so to speak) for which we write
+   code that hosts our client OS. But that analogy only goes so far, and the lines are blurred, because we are using
+   JavaScript in both the host and client environments.
 
    This (and other host/simulation scripts) is the only place that we should see "web" code, like
    DOM manipulation and JavaScript event handling, and so on.  (Index.html is the only place for markup.)
@@ -19,7 +22,7 @@
 function hostInit()
 {
 	// Get a global reference to the canvas.  TODO: Move this stuff into a Display Device Driver, maybe?
-	_Canvas = document.getElementById('display');
+    _Canvas = document.getElementById('display');
 
 	// Get a global reference to the drawing context.
 	_DrawingContext = _Canvas.getContext('2d');
@@ -33,6 +36,9 @@ function hostInit()
 	// Get a global reference to the user input area.
 	_userInputArea = document.getElementById("taProgramInput");
 
+    // Get a global reference to the memory display device.
+    _memoryDisplayDevice = document.getElementById("memoryTable");
+
 	// Clear the log text box.
 	document.getElementById("taLog").value="";
 
@@ -43,7 +49,7 @@ function hostInit()
    if (typeof Glados === "function") {
       _GLaDOS = new Glados();
       _GLaDOS.init();
-   };
+   }
 
 }
 
@@ -88,6 +94,10 @@ function hostBtnStartOS_click(btn)
     // ... Create and initialize the CPU ...
     _CPU = new Cpu();
     _CPU.init();
+
+    // ... Create and initialize main memory ...
+    _MainMemory = new MainMemory(MEMORY_MAX);
+    _MainMemory.clear();
 
     // ... then set the host clock pulse ...
     _hardwareClockID = setInterval(hostClockPulse, CPU_CLOCK_INTERVAL);
