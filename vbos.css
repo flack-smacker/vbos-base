@@ -1,4 +1,3 @@
-/* alanbbos.css */
 
 body {
    background: #909193 url(images/linen.png) repeat;
@@ -40,6 +39,16 @@ h3 {
 	background-color: white;
 	border: 2px solid red;
 }
+
+#memoryDisplay {
+    border: 1px solid black;
+    background-color: white;
+}
+
+#memoryTable {
+
+}
+
 .normal_button {
 	width: 100px;
 }
