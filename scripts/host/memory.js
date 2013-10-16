@@ -50,8 +50,8 @@ function MainMemory(size) {
     /**
      * Clears the contents of main memory to 0.
      */
-    this.clear = function() {
-        for (var i = 0; i < this.bytes.length; ++i) {
+    this.clear = function(start, end) {
+        for (var i = start; i < end; ++i) {
             this.bytes[i] = "00";
         }
     };
