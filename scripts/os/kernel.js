@@ -293,9 +293,15 @@ function krnDispatchProcess(process) {
     process.State = ProcessState.RUNNING;
     // Update the currently active process.
     _ActiveProcess = process.PID;
+    // Update the PCB display
+    updatePCBDisplay();
+
 }
 
 function krnTerminateProcess(process) {
+    process.State = ProcessState.TERMINATED;
+    // Update the PCB display
+    updatePCBDisplay();
     // Reset the CPU registers.
     _CPU.init();
     // Free the memory allocated to this process.
@@ -304,7 +310,7 @@ function krnTerminateProcess(process) {
     delete _KernelPCBList[process.PID];
     // Reset the PID of the active process.
     _ActiveProcess = -1;
-    //
+    // Refresh Main Memory
     refreshDisplay();
     _StdOut.advanceLine();
     _StdOut.putText(">");
@@ -323,4 +329,20 @@ function generatePID() {
     } while (typeof _KernelPCBList[candidate] != 'undefined');
 
     return candidate;
+}
+
+function updatePCBDisplay() {
+    var pcb = _KernelPCBList[_ActiveProcess];
+    var pcbState = "PID: " + pcb.PID + "\n" +
+        "STATE: " + pcb.State + "\n" +
+        "BASE ADDRESS: " + pcb.BASE_ADDRESS + "\n" +
+        "LIMIT: " + pcb.LIMIT + "\n" +
+        "PC: " + _CPU.PC + "\n" +
+        "ACC: " + _CPU.Acc + "\n" +
+        "X: " + _CPU.Xreg + "\n" +
+        "Y: " + _CPU.Yreg + "\n" +
+        "ZFLAG: " + _CPU.Zflag;
+
+    var taPCBDisplay = document.getElementById("taPCBDisplay");
+    taPCBDisplay.value = pcbState;
 }
