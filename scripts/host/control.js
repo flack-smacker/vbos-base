@@ -75,7 +75,6 @@ function hostLog(msg, source)
     // Optionally update a log database or some streaming service.
 }
 
-
 //
 // Control Events
 //
