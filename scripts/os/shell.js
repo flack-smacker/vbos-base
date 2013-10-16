@@ -497,7 +497,7 @@ function loadProgram() {
 
     // First check if the user typed in any source code.
     if (_userInputArea.value.length == 0) {
-        _StdOut.putText("source code not found.");
+        _StdOut.putText("Source code not found.");
         return;
     }
     // Ok, so there is source code...lets validate it.
