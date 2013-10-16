@@ -24,7 +24,9 @@ function hostClockPulse()
 {
    // Increment the hardware (host) clock.
    _OSclock++;
-   // Call the kernel clock pulse event handler.
+   // Update the CPU display.
+    updateCPUDisplay();
+    // Call the kernel clock pulse event handler.
    krnOnCPUClockPulse();
 }
 
@@ -57,4 +59,19 @@ function hostOnKeypress(event)
         // Enqueue this interrupt on the kernel interrupt queue so that it gets to the Interrupt handler.
         _KernelInterruptQueue.enqueue( new Interrupt(KEYBOARD_IRQ, params) );
     }
+}
+
+function updateCPUDisplay() {
+
+    // Update the CPU display
+    var status = _CPU.isExecuting ? "EXECUTING" : "IDLE";
+    var cpuState = "PC: " + _CPU.PC + "\n" +
+                   "ACC: " + _CPU.Acc + "\n" +
+                   "X: " + _CPU.Xreg + "\n" +
+                   "Y: " + _CPU.Yreg + "\n" +
+                   "ZFLAG: " + _CPU.Zflag + "\n" +
+                   "STATUS: " + status;
+
+    var taCpuDisplay = document.getElementById("taCpuDisplay");
+    taCpuDisplay.value = cpuState;
 }
