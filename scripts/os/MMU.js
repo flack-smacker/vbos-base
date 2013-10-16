@@ -38,8 +38,7 @@ function MMU(memory) {
         // (indicated by a pid of 0), or if the process has access to the requested
         // memory address.
         if (pid == 0 || this.rangeCheck(pid, address)) {
-            this.memory.write(address, byteVal);
-            return;
+            this.memory.write(address, ("0" + byteVal.toString(16)).substr(-2));
         } else {
             krnTrapError("Memory Access Error: Write Requested by Unauthorized Process with PID: " + pid);
         }
@@ -96,6 +95,8 @@ function MMU(memory) {
         if (typeof range != 'undefined') {
             // Delete this entry from the memory map.
             delete this.memoryMap[pid];
+            // Clear the memory held by this process.
+            this.memory.clear(range[0], range[1]);
             // Add the newly freed block to the free list.
             this.freeList.push(range);
         }
