@@ -41,8 +41,8 @@
 
 <body onload="hostInit();">
 
-<div id="wrapper" style="width:50%; margin: 0 auto">
-    <div id="divMain">
+<div id="wrapper" style="width:1024px; margin: 0 auto">
+    <div id="divMain" style="float:left; text-align:center;">
 
         <div id="divButtonBar" style="margin:4px;">
             <input type="button"
@@ -80,7 +80,7 @@
             </canvas>
         </div>
 
-        <div id="divStatusBar" style="width:500px; height:25px; margin:4px; float:left">
+        <div id="divStatusBar" style="width:500px; height:25px; position:relative; top:5px; left:4px;">
             <canvas id="statusBar"
                     width="500px"
                     height="25px"
@@ -89,45 +89,72 @@
         </div>
     </div>
 
-    <div id="divLog" style="margin-left:520px;">
-        <label>
-            Log
-            <br>
-            <textarea name="taLog"
-                      id  ="taLog"
-                      rows="3"
-                      cols="60"
-                    ></textarea>
-        </label>
-    </div>
+    <div id="rightDiv" style="position:relative; top:35px; width:505px; float:right;">
 
-    <div id="divUserProgramInput" style="margin-left:520px;">
-        <label>
-            User Program Input
-            <br>
-            <textarea name="taProgramInput"
-                      id  ="taProgramInput"
-                      rows="8"
-                      cols="60"
-                    ></textarea>
-        </label>
-    </div>
+        <div id="divLog">
+            <label>
+                Log
+                <br>
+                <textarea name="taLog"
+                          id  ="taLog"
+                          rows="3"
+                          cols="60"
+                        ></textarea>
+            </label>
+        </div>
 
-    <div id="memoryDisplay" style="width:255px; height:235px; margin-left:522px; margin-top:5px; overflow: auto;">
-        <label>
-            <table id="memoryTable">
-            </table>
-        </label>
+        <div id="divUserProgramInput">
+            <label>
+                User Program Input
+                <br>
+                <textarea name="taProgramInput"
+                          id  ="taProgramInput"
+                          rows="8"
+                          cols="60"
+                        ></textarea>
+            </label>
+        </div>
+
+        <div id="cpuDisplay">
+
+            <label>
+                CPU Display
+                <br>
+                <textarea name="taCpuDisplay"
+                          id  ="taCpuDisplay"
+                          rows="6"
+                          cols="15"
+                        ></textarea>
+            </label>
+
+            <div id="memoryDisplay" style="width:275px; height:255px; overflow: auto; float:right;">
+                <label>
+                    <table id="memoryTable">
+                    </table>
+                </label>
+            </div>
+
+            <label style="float:left;">
+                PCB Display
+                <br>
+                <textarea name="taPCBDisplay"
+                          id  ="taPCBDisplay"
+                          rows="6"
+                          cols="15"
+                        ></textarea>
+            </label>
+        </div>
+    </div>
+    <div id="footer" style="clear:both; position:relative; top:40px">
+        <p class="footerText">
+            <br>
+            Copyright &copy; 2008 - 2013 No Rights Reserved.
+            <br>
+            Reproduction is prohibited without the express written consent of
+            Ted Codd, Stevie Ray Vaughan, and Ian Fleming.
+        </p>
     </div>
 </div>
-
-<p class="footerText" style="clear:both;">
-    <br>
-    Copyright &copy; 2008 - 2013 No Rights Reserved.
-    <br>
-    Reproduction is prohibited without the express written consent of
-    Ted Codd, Stevie Ray Vaughan, and Ian Fleming.
-</p>
 
 </body>
 </html>
