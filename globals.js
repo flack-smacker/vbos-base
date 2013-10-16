@@ -25,7 +25,9 @@ var TIMER_IRQ = 0;  // Pages 23 (timer), 9 (interrupts), and 561 (interrupt prio
                     // NOTE: The timer is different from hardware/host clock pulses. Don't confuse these.
 var KEYBOARD_IRQ = 1;
 
-var SYSTEM_CALL_IRQ = 2;
+var SYSTEM_CALL_IRQ = 2; // Used by a process to to request a system service.
+
+var PROCESS_COMPLETE_IRQ = 3; // Used by a process to indicate successful termination.
 
 
 //
@@ -60,6 +62,7 @@ var _KernelInputQueue = null;
 // Process-related queues
 var _KernelReadyQueue = null;
 var _KernelPCBList = null;
+var _ActiveProcess = -1;
 
 // Standard input and output
 var _StdIn  = null;
