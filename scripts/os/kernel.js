@@ -156,6 +156,9 @@ function krnInterruptHandler(irq, params)    // This is the Interrupt Handler Ro
         case SYSTEM_CALL_IRQ:
             krnSystemCallIsr(params);
             break;
+        case PROCESS_COMPLETE_IRQ:
+            krnTerminateProcess(_KernelPCBList[_ActiveProcess]);
+            break;
         default:
             krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");
     }
@@ -169,19 +172,20 @@ function krnTimerISR()  // The built-in TIMER (not clock) Interrupt Service Rout
 function krnSystemCallIsr(params) {
     if (params[0] == 1)
     {
-        _KernelInputQueue.enqueue(params[1])
+        _StdOut.putText(params[1].toString());
     }
     else if (params[0] == 2)
     {
         var start = params[1];
         var offset = 0;
-        var char = _MemoryManager.read(0, start + offset, 0);
+        var charCode = null;
 
-        while (char != '00') {
-            _KernelInputQueue.enqueue(char);
+        do {
+            var charCode = parseInt(_MemoryManager.read(0, start + offset, 0), 16);
+            _StdOut.putText(String.fromCharCode(charCode));
             offset += 1;
-            char = _MemoryManager.read(0, start + offset, 0);
-        }
+        } while (charCode != 0);
+
     }
 }
 
@@ -243,21 +247,21 @@ function displayBSOD() {
 	_DrawingContext.strokeStyle = "white";
 	
 	_StdOut.putText("UNRECOVERABLE ERROR ENCOUNTERED.");
-	_StdIn.advanceLine();
+	_StdOut.advanceLine();
 	_StdOut.putText("  %ERROR CODE: A0DEAF00 0BABE000");
-	_StdIn.advanceLine();
+    _StdOut.advanceLine();
 	_StdOut.putText("TO AVOID ADDITIONAL LOSS OF DATA.")
-	_StdIn.advanceLine();
+    _StdOut.advanceLine();
 	_StdOut.putText("PLEASE CONTACT OUR SUPPORT DEPARTMENT.");
-	_StdIn.advanceLine();
+    _StdOut.advanceLine();
 	_StdOut.putText("PLEASE HAVE YOUR SUPPORT ID READY.");
-	_StdIn.advanceLine();
+    _StdOut.advanceLine();
 	_StdOut.putText("FOR USERS WITHOUT A SUPPORT ID PLEASE GO TO ");
-	_StdIn.advanceLine();
+    _StdOut.advanceLine();
 	_StdOut.putText("WWW.GOOGLE.COM UPON REBOOT.");
-	_StdIn.advanceLine();
+    _StdOut.advanceLine();
 	_StdOut.putText("HOLD THE POWER BUTTON TO PERFORM A HARD RESET.");
-	_StdIn.advanceLine();
+    _StdOut.advanceLine();
 
 }
 /**
@@ -269,17 +273,13 @@ function krnNewProcess() {
 
     // Create the PCB
     var newPCB = new ProcCtrlBlk();
-
     // Assign it a PID
     newPCB.PID = generatePID();
-
     // Add the PCB to the kernels PCB list.
     _KernelPCBList[newPCB.PID] = newPCB;
-
     // Allocate memory for the process.
     newPCB.BASE_ADDRESS = _MemoryManager.allocate(newPCB.PID);
     newPCB.LIMIT = newPCB.BASE_ADDRESS + 255;
-
     // Return the PID to the caller.
     return newPCB.PID;
 }
@@ -291,8 +291,25 @@ function krnDispatchProcess(process) {
     _CPU.isExecuting = true;
     // Update the process state.
     process.State = ProcessState.RUNNING;
+    // Update the currently active process.
+    _ActiveProcess = process.PID;
 }
 
+function krnTerminateProcess(process) {
+    // Reset the CPU registers.
+    _CPU.init();
+    // Free the memory allocated to this process.
+    _MemoryManager.deallocate(process.PID);
+    // Delete the PCB associated with this process.
+    delete _KernelPCBList[process.PID];
+    // Reset the PID of the active process.
+    _ActiveProcess = -1;
+    //
+    refreshDisplay();
+    _StdOut.advanceLine();
+    _StdOut.putText(">");
+
+}
 /**
  * Generates an integer PID within the range of 0 to MAX_PROCESSES
  *
