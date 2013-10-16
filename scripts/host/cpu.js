@@ -1,17 +1,17 @@
 /* ------------  
-   CPU.js
+ CPU.js
 
-   Requires global.js.
-   
-   Routines for the host CPU simulation, NOT for the OS itself.  
-   In this manner, it's A LITTLE BIT like a hypervisor,
-   in that the Document environment inside a browser is the "bare metal" (so to speak) for which we write code
-   that hosts our client OS. But that analogy only goes so far, and the lines are blurred, because we are using
-   JavaScript in both the host and client environments.
+ Requires global.js.
 
-   This code references page numbers in the text book: 
-   Operating System Concepts 8th edition by Silberschatz, Galvin, and Gagne.  ISBN 978-0-470-12872-5
-   ------------ */
+ Routines for the host CPU simulation, NOT for the OS itself.
+ In this manner, it's A LITTLE BIT like a hypervisor,
+ in that the Document environment inside a browser is the "bare metal" (so to speak) for which we write code
+ that hosts our client OS. But that analogy only goes so far, and the lines are blurred, because we are using
+ JavaScript in both the host and client environments.
+
+ This code references page numbers in the text book:
+ Operating System Concepts 8th edition by Silberschatz, Galvin, and Gagne.  ISBN 978-0-470-12872-5
+ ------------ */
 
 function Cpu() {
     this.PC    = 0;     // Program Counter
@@ -26,10 +26,10 @@ function Cpu() {
         this.Acc   = 0;
         this.Xreg  = 0;
         this.Yreg  = 0;
-        this.Zflag = 0;      
-        this.isExecuting = false;  
+        this.Zflag = 0;
+        this.isExecuting = false;
     };
-    
+
     this.cycle = function() {
         krnTrace("CPU cycle");
         // TODO: Accumulate CPU usage and profiling statistics here.
@@ -52,7 +52,7 @@ function Cpu() {
     this.instructions = {
 
         'A9': function() { // Load the accumulator with a constant.
-            _CPU.Acc = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 10);
+            _CPU.Acc = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 16);
             _CPU.PC += 1;
         },
 
@@ -66,7 +66,7 @@ function Cpu() {
             var lowNyble = _MemoryManager.read(0, _CPU.PC, 0);
             var highNyble = _MemoryManager.read(0, _CPU.PC, 1);
 
-            var toAddress = parseInt(highNyble + lowNyble, 10);
+            var toAddress = parseInt(highNyble + lowNyble, 16);
 
             _MemoryManager.write(0, toAddress, _CPU.Acc);
 
@@ -82,7 +82,7 @@ function Cpu() {
         },
 
         'A2': function() { // Load X register with a constant.
-            _CPU.X = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 10);
+            _CPU.Xreg = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 16);
             _CPU.PC += 1;
         },
 
@@ -90,12 +90,12 @@ function Cpu() {
 
             var toLoad = fetchOperand()
 
-            _CPU.X = toLoad;
+            _CPU.Xreg = toLoad;
 
         },
 
         'A0': function() { // Load Y register with a constant.
-            _CPU.Y = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 10);
+            _CPU.Yreg = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 16);
             _CPU.PC += 1;
         },
 
@@ -103,7 +103,7 @@ function Cpu() {
 
             var toLoad = fetchOperand();
 
-            _CPU.Y = toLoad;
+            _CPU.Yreg = toLoad;
         },
 
         'EA': function() { // NO-OP
@@ -111,28 +111,27 @@ function Cpu() {
         },
 
         '00': function() { // Break (System-call)
-            _CPU.isExecuting = false;
+            _KernelInterruptQueue.enqueue(new Interrupt(PROCESS_COMPLETE_IRQ, [0]));
         },
 
         'EC': function() { // Compare a byte in memory to contents of X register
 
             var toCompare = fetchOperand();
 
-            if (_CPU.X == toCompare) {
-                _CPU.Z = 1;
+            if (_CPU.Xreg == toCompare) {
+                _CPU.Zflag = 1;
             }
         },
 
         'D0': function() { // Branch X bytes if Z flag = 0
 
-            if (_CPU.Z == 0) {
+            if (_CPU.Zflag == 0) {
                 var offset = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 16);
 
-                // Allow for "negative" branching by wrapping-around.
-                if ( (255 % offset) > 0 ) {
-                    _CPU.PC = 255 % offset;
-                } else {
-                    _CPU.PC += offset;
+                _CPU.PC = _CPU.PC + offset
+
+                if ( _CPU.PC > 255 ) { // Allows for "negative" branching by wrapping-around.
+                    _CPU.PC = _CPU.PC - 255;
                 }
             } else {
                 _CPU.PC += 1;
@@ -145,8 +144,8 @@ function Cpu() {
             var highNyble = _MemoryManager.read(0, _CPU.PC, 1);
             _CPU.PC += 2;
 
-            var operandAddress = parseInt(highNyble + lowNyble, 10);
-            var operand =  parseInt(_MemoryManager.read(0, operandAddress, 0), 10);
+            var operandAddress = parseInt(highNyble + lowNyble, 16);
+            var operand =  parseInt(_MemoryManager.read(0, operandAddress, 0), 16);
 
             operand += 1;
 
@@ -154,10 +153,10 @@ function Cpu() {
         },
 
         'FF': function() { // Print system call.
-            if (_CPU.X == 1) { // #$01 in X reg = print the integer stored in the Y register.
-                _KernelInterruptQueue.enqueue(new Interrupt(SYSTEM_CALL_IRQ, [1, _CPU.Y]));
-            } else if (_CPU.X == 2) { // #$02 in X reg = print the 00-terminated string stored at the address in the Y register.
-                _KernelInterruptQueue.enqueue(new Interrupt(SYSTEM_CALL_IRQ, [2, _CPU.Y]));
+            if (_CPU.Xreg == 1) { // #$01 in X reg = print the integer stored in the Y register.
+                _KernelInterruptQueue.enqueue(new Interrupt(SYSTEM_CALL_IRQ, [1, _CPU.Yreg]));
+            } else if (_CPU.Xreg == 2) { // #$02 in X reg = print the 00-terminated string stored at the address in the Y register.
+                _KernelInterruptQueue.enqueue(new Interrupt(SYSTEM_CALL_IRQ, [2, _CPU.Yreg]));
             }
         }
     };
@@ -168,8 +167,8 @@ function Cpu() {
         var highNyble = _MemoryManager.read(0, _CPU.PC, 1);
         _CPU.PC += 2;
 
-        var operandAddress = parseInt(highNyble + lowNyble, 10);
-        var operand =  parseInt(_MemoryManager.read(0, operandAddress, 0), 10);
+        var operandAddress = parseInt(highNyble + lowNyble, 16);
+        var operand =  parseInt(_MemoryManager.read(0, operandAddress, 0), 16);
 
         return operand;
     }
