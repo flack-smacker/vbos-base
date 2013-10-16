@@ -17,10 +17,19 @@ function krnBootstrap()      // Page 8.
 {
    hostLog("bootstrap", "host");  // Use hostLog because we ALWAYS want this, even if _Trace is off.
 
+    // Load and initialize the Memory Management Module
+    _MemoryManager = new MMU(_MainMemory);
+    _MemoryManager.init();
+
    // Initialize our global queues.
    _KernelInterruptQueue = new Queue();  // A (currently) non-priority queue for interrupt requests (IRQs).
    _KernelBuffers = new Array();         // Buffers... for the kernel.
    _KernelInputQueue = new Queue();      // Where device input lands before being processed out somewhere.
+
+   // Process related queues.
+   _KernelReadyQueue = new Queue();
+   _KernelPCBList = new Array();
+
    _Console = new CLIconsole();          // The command line interface / console I/O device.
 
    // Initialize the CLIconsole.
@@ -41,7 +50,13 @@ function krnBootstrap()      // Page 8.
    krnStatusBarDriver = new DeviceDriverStatusBar();
    krnStatusBarDriver.driverEntry();
    krnTrace(krnStatusBarDriver.status);
-   
+
+   // Load the device driver for the memory display.
+   krnTrace("Loading the memory display device driver.");
+   krnMemDispDriver = new DeviceDriverMemoryDisplay();
+   krnMemDispDriver.driverEntry();
+   krnTrace(krnMemDispDriver.status);
+
    // Enable the OS Interrupts.  (Not the CPU clock interrupt, as that is done in the hardware sim.)
    krnTrace("Enabling the interrupts.");
    krnEnableInterrupts();
@@ -90,8 +105,13 @@ function krnOnCPUClockPulse()
     else if (_CPU.isExecuting) // If there are no interrupts then run one CPU cycle if there is anything being processed.
     {
         _CPU.cycle();
-    }    
-    else                       // If there are no interrupts and there is nothing being executed then just be idle.
+    }
+    else if (_KernelReadyQueue.getSize() > 0) // If there is no work to execute then check the ready queue for more work.
+    {
+        var toDispatch = _KernelReadyQueue.dequeue();
+        krnDispatchProcess(toDispatch);
+    }
+    else  // If there are no interrupts and there is nothing being executed then just be idle.
     {
        krnTrace("Idle");
     }
@@ -133,7 +153,13 @@ function krnInterruptHandler(irq, params)    // This is the Interrupt Handler Ro
             krnKeyboardDriver.isr(params);   // Kernel mode device driver
             _StdIn.handleInput();
             break;
-        default: 
+        case SYSTEM_CALL_IRQ:
+            krnSystemCallIsr(params);
+            break;
+        case PROCESS_COMPLETE_IRQ:
+            krnTerminateProcess(_KernelPCBList[_ActiveProcess]);
+            break;
+        default:
             krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");
     }
 }
@@ -143,8 +169,25 @@ function krnTimerISR()  // The built-in TIMER (not clock) Interrupt Service Rout
     // Check multiprogramming parameters and enforce quanta here. Call the scheduler / context switch here if necessary.
 }   
 
+function krnSystemCallIsr(params) {
+    if (params[0] == 1)
+    {
+        _StdOut.putText(params[1].toString());
+    }
+    else if (params[0] == 2)
+    {
+        var start = params[1];
+        var offset = 0;
+        var charCode = null;
 
+        do {
+            var charCode = parseInt(_MemoryManager.read(0, start + offset, 0), 16);
+            _StdOut.putText(String.fromCharCode(charCode));
+            offset += 1;
+        } while (charCode != 0);
 
+    }
+}
 //
 // System Calls... that generate software interrupts via tha Application Programming Interface library routines.
 //
@@ -202,20 +245,102 @@ function displayBSOD() {
 	_DrawingContext.strokeStyle = "white";
 	
 	_StdOut.putText("UNRECOVERABLE ERROR ENCOUNTERED.");
-	_StdIn.advanceLine();
+	_StdOut.advanceLine();
 	_StdOut.putText("  %ERROR CODE: A0DEAF00 0BABE000");
-	_StdIn.advanceLine();
+    _StdOut.advanceLine();
 	_StdOut.putText("TO AVOID ADDITIONAL LOSS OF DATA.")
-	_StdIn.advanceLine();
+    _StdOut.advanceLine();
 	_StdOut.putText("PLEASE CONTACT OUR SUPPORT DEPARTMENT.");
-	_StdIn.advanceLine();
+    _StdOut.advanceLine();
 	_StdOut.putText("PLEASE HAVE YOUR SUPPORT ID READY.");
-	_StdIn.advanceLine();
+    _StdOut.advanceLine();
 	_StdOut.putText("FOR USERS WITHOUT A SUPPORT ID PLEASE GO TO ");
-	_StdIn.advanceLine();
+    _StdOut.advanceLine();
 	_StdOut.putText("WWW.GOOGLE.COM UPON REBOOT.");
-	_StdIn.advanceLine();
+    _StdOut.advanceLine();
 	_StdOut.putText("HOLD THE POWER BUTTON TO PERFORM A HARD RESET.");
-	_StdIn.advanceLine();
+    _StdOut.advanceLine();
 
-};
+}
+/**
+ * Creates a new process and adds it to the PCB list.
+ *
+ * @returns {ProcCtrlBlk.PID|*}
+ */
+function krnNewProcess() {
+
+    // Create the PCB
+    var newPCB = new ProcCtrlBlk();
+    // Assign it a PID
+    newPCB.PID = generatePID();
+    // Add the PCB to the kernels PCB list.
+    _KernelPCBList[newPCB.PID] = newPCB;
+    // Allocate memory for the process.
+    newPCB.BASE_ADDRESS = _MemoryManager.allocate(newPCB.PID);
+    newPCB.LIMIT = newPCB.BASE_ADDRESS + 255;
+    // Return the PID to the caller.
+    return newPCB.PID;
+}
+
+function krnDispatchProcess(process) {
+    // Set the program counter to the address of the first instruction.
+    _CPU.PC = process.BASE_ADDRESS;
+    // Inform the kernel that there is work to be done.
+    _CPU.isExecuting = true;
+    // Update the process state.
+    process.State = ProcessState.RUNNING;
+    // Update the currently active process.
+    _ActiveProcess = process.PID;
+    // Update the PCB display
+    updatePCBDisplay();
+
+}
+
+function krnTerminateProcess(process) {
+    process.State = ProcessState.TERMINATED;
+    // Update the PCB display
+    updatePCBDisplay();
+    // Reset the CPU registers.
+    _CPU.init();
+    // Free the memory allocated to this process.
+    _MemoryManager.deallocate(process.PID);
+    // Delete the PCB associated with this process.
+    delete _KernelPCBList[process.PID];
+    // Reset the PID of the active process.
+    _ActiveProcess = -1;
+    // Refresh Main Memory
+    refreshDisplay();
+    _StdOut.advanceLine();
+    _StdOut.putText(">");
+
+}
+/**
+ * Generates an integer PID within the range of 0 to MAX_PROCESSES
+ *
+ * @returns {*}
+ */
+function generatePID() {
+    var candidate;
+
+    do { // loop until an unused PID is generated
+        candidate = Math.floor(Math.random()*100) % MAX_PROCESSES;
+    } while (typeof _KernelPCBList[candidate] != 'undefined');
+
+    return candidate;
+}
+
+function updatePCBDisplay() {
+    var pcb = _KernelPCBList[_ActiveProcess];
+    var pcbState = "PID: " + pcb.PID + "\n" +
+        "STATE: " + pcb.State + "\n" +
+        "BASE ADDRESS: " + pcb.BASE_ADDRESS + "\n" +
+        "LIMIT: " + pcb.LIMIT + "\n" +
+        "PC: " + _CPU.PC + "\n" +
+        "ACC: " + _CPU.Acc + "\n" +
+        "X: " + _CPU.Xreg + "\n" +
+        "Y: " + _CPU.Yreg + "\n" +
+        "ZFLAG: " + _CPU.Zflag;
+
+    var taPCBDisplay = document.getElementById("taPCBDisplay");
+    taPCBDisplay.value = pcbState;
+}

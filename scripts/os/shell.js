@@ -97,17 +97,24 @@ function shellInit() {
 	// theme - allows the user to change the color of the console elements
 	sc = new ShellCommand();
 	sc.command = "theme";
-	sc.description = " - Sets the console theme."
+	sc.description = " - Sets the console theme.";
 	sc.function = shellChangeTheme;
 	this.commandList[this.commandList.length] = sc;
 
-	// load - validates the code in the user program input area
+	// load - Loads the source code from the input area into main memory.
 	sc = new ShellCommand();
 	sc.command = "load";
-	sc.description = " - Validates user program input.";
-	sc.function = shellValidateCode;
+	sc.description = " - Loads a user program into main memory.";
+	sc.function = loadProgram;
 	this.commandList[this.commandList.length] = sc;
-	
+
+    // run - Executes the process with the specified PID.
+    sc = new ShellCommand();
+    sc.command = "run";
+    sc.description = " - Executes a user program that exists in memory.";
+    sc.function = executeProcess;
+    this.commandList[this.commandList.length] = sc;
+
 	// BSOD - provide a mechanism for testing the kernel error trap function
 	sc = new ShellCommand();
 	sc.command = "implode";
@@ -424,21 +431,19 @@ function shellPrompt(args)
 
 function shellChangeTheme(args) {
 
-	// If the user provided no args then simply output the current theme.
-	if (args.length == 0) {
+	if (args.length == 0) { // If the user provided no args then simply output the current theme.
 		_StdIn.putText("The current theme is " + _Console.CurrentTheme.name + ".");
 		_StdIn.advanceLine();
 		_StdIn.putText("Type \"theme list\" for a list of available themes.");
-	} else if (args.length == 1) {
-		// Present the user with a list of available themes.
-		if (args[0] == "list") {
+	} else if (args.length == 1) { // If the user provided an argument then do more stuff.
+
+		if (args[0] == "list") { // Present the user with a list of available themes.
 
 			for (var i = 0; i < Themes.length; ++i) {
 				_StdIn.putText("  " + Themes[i].name + " - " + Themes[i].description);
 				_StdIn.advanceLine();
 			}
-
-		} else {
+		} else { // Attempt to set the theme using the theme-name specified by the user.
 
 			var userTheme = args[0];
 			// initialize the loop variables
@@ -462,10 +467,7 @@ function shellChangeTheme(args) {
 	}
 }
 
-function shellValidateCode() {
-
-	// Get the program code and split it into an array of characters.
-	var tokens = _userInputArea.value.trim().split("");
+function validateSourceCode(tokens) {
 
 	// Build the regex.
 	var regex = new RegExp("([A-F]|[0-9]| )", "i");
@@ -473,7 +475,8 @@ function shellValidateCode() {
 	// Initialize loop variables.
 	var valid = true;
 	var index = 0;
-	// loop until there are no more characters or an invalid character is found.
+
+	// loop until there are no more characters or until an invalid character is found.
 	while(valid && index < tokens.length) {
 
 		if (!regex.test(tokens[index])) {
@@ -483,22 +486,62 @@ function shellValidateCode() {
 		}
 	}
 
-	// Inform the user of the results.
-	if (!valid) {
-		_StdIn.putText("  Invalid token found in program.");
-		_StdIn.advanceLine();
-		_StdIn.putText("  Program should contain only spaces and HEX characters.");
-	} else {
-		_StdIn.putText("  Your program is valid. Good Job.");
-		_StdIn.advanceLine();
-		_StdIn.putText("  Whether it is correct remains to be seen.");
-	}
+    return valid;
 }
 
+/**
+ * Loads the source code from the user input area into main memory.
+ */
+function loadProgram() {
+
+    // First check if the user typed in any source code.
+    if (_userInputArea.value.length == 0) {
+        _StdOut.putText("Source code not found.");
+        return;
+    }
+    // Ok, so there is source code...lets validate it.
+    var src = _userInputArea.value.trim().split(" ");
+    var isValid = validateSourceCode(src);
+
+    // Its valid, do stuff.
+    if (isValid) {
+        // create a new process
+        var pid = krnNewProcess();
+        // load the program code into main memory
+        for (var i = 0; i < src.length; i++) {
+            _MemoryManager.write(pid, i, src[i].trim());
+        }
+        // refresh the memory display device
+        refreshDisplay();
+        // return pid to the console
+        _StdOut.putText("PID " + pid);
+    } else { // Its not valid. Inform the user.
+        _StdOut.putText("  Invalid token found in program.");
+        _StdOut.advanceLine();
+        _StdOut.putText("  Program should contain only spaces and HEX characters.");
+    }
+}
+
+function executeProcess(pid) {
+
+    // Get the PCB associated with the specified PID.
+    var toExecute = _KernelPCBList[pid];
+
+    // This check ensures that the specified PID is valid.
+    if (typeof toExecute != 'undefined') {
+        _KernelReadyQueue.enqueue(toExecute);
+    } else {
+        _StdOut.putText("Unable to execute process. Invalid PID " + pid);
+    }
+
+}
+
+// Causes a catastrophic error resulting in a BSOD.
 function shellImplode(args) {
 	krnTrapError(args[0]);
 }
 
+// Updates the status bar with a custom status message.
 function shellSetStatus(args) {
 	if (args.length < 1) {
 		_StdIn.putText("Please supply a string.");

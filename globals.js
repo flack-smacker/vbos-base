@@ -16,15 +16,24 @@ var APP_VERSION = "0.01";
 
 var CPU_CLOCK_INTERVAL = 100;   // This is in ms, or milliseconds, so 1000 = 1 second.
 
+var MEMORY_MAX = 256; // Size of main memory in bytes.
+
+var MAX_PROCESSES = 100 // The maximum number of processes that can exist on the system.
+var DEFAULT_PRIORITY = 1 // The default priority given to a newly created process.
+
 var TIMER_IRQ = 0;  // Pages 23 (timer), 9 (interrupts), and 561 (interrupt priority).
                     // NOTE: The timer is different from hardware/host clock pulses. Don't confuse these.
 var KEYBOARD_IRQ = 1;
-
+var SYSTEM_CALL_IRQ = 2; // Used by a process to to request a system service.
+var PROCESS_COMPLETE_IRQ = 3; // Used by a process to indicate successful termination.
 
 //
 // Global Variables
 //
 var _CPU = null;
+
+var _MainMemory = null;
+var _MemoryManager = null;
 
 var _OSclock = 0;       // Page 23.
 
@@ -37,6 +46,7 @@ var _DefaultFontSize = 13;
 var _FontHeightMargin = 4;        // Additional space added to font size when advancing a line.
 
 var _statusBar = null;			  // Initialized in hostInit();
+var _memoryDisplayDevice = null;  // Initialized in hostInit();
 var _userInputArea = null;		  // Initialized in hostInit();
 
 // Default the OS trace to be on.
@@ -46,6 +56,11 @@ var _Trace = true;
 var _KernelInterruptQueue = null;
 var _KernelBuffers = null;
 var _KernelInputQueue = null;
+
+// Process-related queues
+var _KernelReadyQueue = null;
+var _KernelPCBList = null;
+var _ActiveProcess = -1;
 
 // Standard input and output
 var _StdIn  = null;
@@ -61,6 +76,8 @@ var _SarcasticMode = false;
 // Global Device Driver Objects - page 12
 var krnKeyboardDriver = null;
 var krnStatusBarDriver = null;
+var krnStatusBarDriver = null
+var krnMemDispDriver = null;
 
 // For testing...
 var _GLaDOS = null;

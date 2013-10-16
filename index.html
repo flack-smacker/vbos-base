@@ -1,122 +1,160 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-   <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-   <meta name="author"             content="Alan G. Labouseur" />
-   <link rel="stylesheet" href="alanbbos.css" type="text/css" media="screen" />
-   <title>
-      VBOS - a Browser-based Virtual Operating System
-   </title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <meta name="author"             content="Alan G. Labouseur" />
+    <link rel="stylesheet" href="vbos.css" type="text/css" media="screen" />
+    <title>
+        VBOS - a Browser-based Virtual Operating System
+    </title>
 
-   <!-- Globals CONSTANTS and _Variables. Must included be first. -->
-   <script type="text/javascript" src="globals.js"></script>
+    <!-- Globals CONSTANTS and _Variables. Must included be first. -->
+    <script type="text/javascript" src="globals.js"></script>
 
-   <!-- Host (Hardware Simulation) Routines -->
-   <script type="text/javascript" src="scripts/host/control.js"></script>
-   <script type="text/javascript" src="scripts/host/devices.js"></script>
-   <script type="text/javascript" src="scripts/host/cpu.js"></script>
+    <!-- Host (Hardware Simulation) Routines -->
+    <script type="text/javascript" src="scripts/host/control.js"></script>
+    <script type="text/javascript" src="scripts/host/devices.js"></script>
+    <script type="text/javascript" src="scripts/host/cpu.js"></script>
+    <script type="text/javascript" src="scripts/host/memory.js"></script>
 
-   <!-- Virtual OS Routines: Make sure Kernel code is last, since it needs those above it. -->
-   <script type="text/javascript" src="scripts/os/interrupt.js"></script>
-   <script type="text/javascript" src="scripts/os/canvastext.js"></script>
-   <script type="text/javascript" src="scripts/os/themes.js"></script>
-   <script type="text/javascript" src="scripts/os/console.js"></script>
-   <script type="text/javascript" src="scripts/os/deviceDriver.js"></script>
-   <script type="text/javascript" src="scripts/os/deviceDriverKeyboard.js"></script>
-   <script type="text/javascript" src="scripts/os/deviceDriverStatusBar.js"></script>
-   <script type="text/javascript" src="scripts/os/queue.js"></script>
-   <script type="text/javascript" src="scripts/os/history.js"></script>
-   <script type="text/javascript" src="scripts/os/shell.js"></script>
-   <script type="text/javascript" src="scripts/os/kernel.js"></script>
+    <!-- Virtual OS Routines: Make sure Kernel code is last, since it needs those above it. -->
+    <script type="text/javascript" src="scripts/os/interrupt.js"></script>
+    <script type="text/javascript" src="scripts/os/process.js"></script>
+    <script type="text/javascript" src="scripts/os/canvastext.js"></script>
+    <script type="text/javascript" src="scripts/os/themes.js"></script>
+    <script type="text/javascript" src="scripts/os/console.js"></script>
+    <script type="text/javascript" src="scripts/os/deviceDriver.js"></script>
+    <script type="text/javascript" src="scripts/os/deviceDriverKeyboard.js"></script>
+    <script type="text/javascript" src="scripts/os/deviceDriverStatusBar.js"></script>
+    <script type="text/javascript" src="scripts/os/deviceDriverMemoryDisplay.js"></script>
+    <script type="text/javascript" src="scripts/os/queue.js"></script>
+    <script type="text/javascript" src="scripts/os/history.js"></script>
+    <script type="text/javascript" src="scripts/os/shell.js"></script>
+    <script type="text/javascript" src="scripts/os/MMU.js"></script>
+    <script type="text/javascript" src="scripts/os/kernel.js"></script>
 
-   <!-- Other Routines -->
-   <script type="text/javascript" src="scripts/utils.js"></script>
-   <script type="text/javascript" src="http://www.labouseur.com/courses/os/projects/glados.js"></script>
+
+    <!-- Other Routines -->
+    <script type="text/javascript" src="scripts/utils.js"></script>
+    <!-- <script type="text/javascript" src="http://www.labouseur.com/courses/os/projects/glados.js"></script> -->
 </head>
 
 <body onload="hostInit();">
 
-<div id="divMain" style="width:100%;">
+<div id="wrapper" style="width:1024px; margin: 0 auto">
+    <div id="divMain" style="float:left; text-align:center;">
 
-   <div id="divButtonBar" style="margin:4px;">
-      <input type="button"
-             id = "btnStartOS"
-             name="brnStartOS"
-             class="normal_button"
-             value="Start"
-             tabindex="0"
-             onclick="hostBtnStartOS_click(this);">
+        <div id="divButtonBar" style="margin:4px;">
+            <input type="button"
+                   id = "btnStartOS"
+                   name="brnStartOS"
+                   class="normal_button"
+                   value="Start"
+                   tabindex="0"
+                   onclick="hostBtnStartOS_click(this);">
 
-      <input type="button"
-             id = "btnHaltOS"
-             name="brnHaltOS"
-             class="normal_button"
-             disabled="disabled"
-             value="Halt"
-             tabindex="1"
-             onclick="hostBtnHaltOS_click(this);">
+            <input type="button"
+                   id = "btnHaltOS"
+                   name="brnHaltOS"
+                   class="normal_button"
+                   disabled="disabled"
+                   value="Halt"
+                   tabindex="1"
+                   onclick="hostBtnHaltOS_click(this);">
 
-      <input type="button"
-             id = "btnReset"
-             name="brnReset"
-             class="normal_button"
-             disabled="disabled"
-             value="Reset"
-             tabindex="2"
-             onclick="hostBtnReset_click(this);">
-   </div>
+            <input type="button"
+                   id = "btnReset"
+                   name="brnReset"
+                   class="normal_button"
+                   disabled="disabled"
+                   value="Reset"
+                   tabindex="2"
+                   onclick="hostBtnReset_click(this);">
+        </div>
 
-   <div id="divConsole" style="margin:4px; width:500px; height:500px; float:left">
-      <canvas id="display"
-              width="500px"
-              height="500px"
-              tabindex="3">
-      </canvas>
-   </div>
+        <div id="divConsole" style="margin:4px; width:500px; height:500px; float:left">
+            <canvas id="display"
+                    width="500px"
+                    height="500px"
+                    tabindex="3">
+            </canvas>
+        </div>
 
- </div>
+        <div id="divStatusBar" style="width:500px; height:25px; position:relative; top:5px; left:4px;">
+            <canvas id="statusBar"
+                    width="500px"
+                    height="25px"
+                    tabindex="4">
+            </canvas>
+        </div>
+    </div>
 
-   <div id="divLog" style="margin-left:520px;">
-      <label>
-         Log
-         <br>
-         <textarea name="taLog"
-                   id  ="taLog"
-                   rows="26"
-                   cols="48"
-         ></textarea>
-      </label>
-   </div>
+    <div id="rightDiv" style="position:relative; top:35px; width:505px; float:right;">
 
-   <div id="divUserProgramInput" style="margin-left:520px;">
-      <label>
-         User Program Input
-         <br>
-         <textarea name="taProgramInput"
-                   id  ="taProgramInput"
-                   rows="8"
-                   cols="48"
-         ></textarea>
-      </label>
-   </div>
+        <div id="divLog">
+            <label>
+                Log
+                <br>
+                <textarea name="taLog"
+                          id  ="taLog"
+                          rows="3"
+                          cols="60"
+                        ></textarea>
+            </label>
+        </div>
 
-   <div id="divStatusBar" style="width:500px; height:25px; margin-left:4px; position:relative; top:-120px">
-	  <canvas id="statusBar"
-			  width="500px"
-			  height="25px"
-			  tabindex="4">
-	  </canvas>
-	</div>
+        <div id="divUserProgramInput">
+            <label>
+                User Program Input
+                <br>
+                <textarea name="taProgramInput"
+                          id  ="taProgramInput"
+                          rows="8"
+                          cols="60"
+                        ></textarea>
+            </label>
+        </div>
 
+        <div id="cpuDisplay">
+
+            <label>
+                CPU Display
+                <br>
+                <textarea name="taCpuDisplay"
+                          id  ="taCpuDisplay"
+                          rows="6"
+                          cols="15"
+                        ></textarea>
+            </label>
+
+            <div id="memoryDisplay" style="width:275px; height:255px; overflow: auto; float:right;">
+                <label>
+                    <table id="memoryTable">
+                    </table>
+                </label>
+            </div>
+
+            <label style="float:left;">
+                PCB Display
+                <br>
+                <textarea name="taPCBDisplay"
+                          id  ="taPCBDisplay"
+                          rows="6"
+                          cols="15"
+                        ></textarea>
+            </label>
+        </div>
+    </div>
+    <div id="footer" style="clear:both; position:relative; top:40px">
+        <p class="footerText">
+            <br>
+            Copyright &copy; 2008 - 2013 No Rights Reserved.
+            <br>
+            Reproduction is prohibited without the express written consent of
+            Ted Codd, Stevie Ray Vaughan, and Ian Fleming.
+        </p>
+    </div>
 </div>
-
-<p class="footerText" style="clear:both;">
-   <br>
-   Copyright &copy; 2008 - 2013 No Rights Reserved.
-   <br>
-   Reproduction is prohibited without the express written consent of
-   Ted Codd, Stevie Ray Vaughan, and Ian Fleming.
-</p>
 
 </body>
 </html>

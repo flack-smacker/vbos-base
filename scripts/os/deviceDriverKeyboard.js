@@ -47,6 +47,18 @@ function krnKbdDispatchKeyPress(params)
         // TODO: Check for caps-lock and handle as shifted if so.
         _KernelInputQueue.enqueue(chr);        
     }
+    else if ((keyCode >= 48) && (keyCode <= 57) && isShifted) {
+        if (keyCode == 48) _KernelInputQueue.enqueue(')')
+        else if (keyCode == 49) _KernelInputQueue.enqueue('!');
+        else if (keyCode == 50) _KernelInputQueue.enqueue('@');
+        else if (keyCode == 51) _KernelInputQueue.enqueue('#');
+        else if (keyCode == 52) _KernelInputQueue.enqueue('$');
+        else if (keyCode == 53) _KernelInputQueue.enqueue('%');
+        else if (keyCode == 54) _KernelInputQueue.enqueue('^');
+        else if (keyCode == 55) _KernelInputQueue.enqueue('&');
+        else if (keyCode == 56) _KernelInputQueue.enqueue('*');
+        else if (keyCode == 57) _KernelInputQueue.enqueue('(');
+    }
     else if ( ((keyCode >= 48) && (keyCode <= 57)) ||   // digits
 			   (keyCode == 32)                     ||   // space
                (keyCode == 13)                     ||   // enter
@@ -72,7 +84,23 @@ function krnKbdDispatchKeyPress(params)
 	else if ((keyCode == 188) && isShifted) // less than
 		_KernelInputQueue.enqueue('<');
 	else if (keyCode == 188)				// comma
-		_KernelInputQueue.enqueue(',');	 	
+		_KernelInputQueue.enqueue(',');
+    else if ((keyCode == 186) && isShifted) // colon
+        _KernelInputQueue.enqueue(':');
+    else if ((keyCode == 186))              // semicolon
+        _KernelInputQueue.enqueue(';');
+    else if ((keyCode == 187) && isShifted) // plus
+        _KernelInputQueue.enqueue('+');
+    else if ((keyCode == 187))              // equals
+        _KernelInputQueue.enqueue('=');
+	else if ((keyCode == 188) && isShifted) // less than
+		_KernelInputQueue.enqueue('<');
+	else if (keyCode == 188)				// comma
+		_KernelInputQueue.enqueue(',');
+    else if ((keyCode == 189) && isShifted) // underscore
+        _KernelInputQueue.enqueue('_');
+    else if ((keyCode == 189))              // dash
+        _KernelInputQueue.enqueue('-');
 	else if ((keyCode == 190) && isShifted) // greater than
 		_KernelInputQueue.enqueue('>');	
 	else if (keyCode == 190)				// period

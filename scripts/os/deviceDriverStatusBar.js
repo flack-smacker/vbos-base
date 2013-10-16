@@ -38,7 +38,7 @@ function updateStatusMessage(msg) {
 function updateClockDisplay() {
 	_statusBar.clearRect(305, 0, 500, 25);
 	_statusBar.font = "normal 15px monospace";
-	_statusBar.strokeText(getFormattedDateString(), 305, 20);
+	_statusBar.strokeText(getFormattedDateString(), 300, 20);
 }
 
 function getFormattedDateString() {

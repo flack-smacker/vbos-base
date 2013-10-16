@@ -14,8 +14,9 @@ function HistoryList() {
 	this.currentPtr = 0;
 
 	this.saveCommand = function(cmd) {
-		// check if the command to be added is the same as the last command.
-		//   There is no reason to have the same command listed twice in a row.
+		// Check if the command to be added is the same as the previously entered command.
+		// If so, then do not add it. There is no reason to have the same command listed
+		// twice in a row.
 		if (this.cmdList[this.cmdList.length-1] != cmd) {
 			this.cmdList.push(cmd);
 			this.currentPtr = this.cmdList.length-1;
@@ -43,7 +44,7 @@ function HistoryList() {
 			return "";
 		} else {
 			var retVal = this.cmdList[this.currentPtr];
-			// Move the history pointer to the left
+			// Move the history pointer to the right
 			//  unless it is already at the end.
 			if (this.currentPtr != this.cmdList.length-1) {
 				this.currentPtr += 1;

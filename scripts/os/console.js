@@ -167,7 +167,7 @@ function CLIconsole() {
        this.CurrentYPosition += _DefaultFontSize + _FontHeightMargin;
 	   
 	   if (this.CurrentYPosition > 500) {
-			this.scrollDisplay();
+			this.scrollDisplay(1);
 	   }
     };
 
