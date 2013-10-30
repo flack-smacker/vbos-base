@@ -60,7 +60,7 @@ function krnBootstrap()      // Page 8.
    // Enable the OS Interrupts.  (Not the CPU clock interrupt, as that is done in the hardware sim.)
    krnTrace("Enabling the interrupts.");
    krnEnableInterrupts();
-    
+
    // Launch the shell.
    krnTrace("Creating and Launching the shell.");
    _OsShell = new Shell();
@@ -204,7 +204,7 @@ function displayString(startAddress) {
 
     do { // Loop until the null-terminator is encountered.
         // Retrieve the next character from memory.
-        var charCode = parseInt(_MemoryManager.read(0, startAddress + offset, 0), 16);
+        charCode = parseInt(_MemoryManager.read(0, startAddress + offset, 0), 16);
         _StdOut.putText(String.fromCharCode(charCode)); // Print the character to standard output.
         offset += 1; // Point to the next character in the string.
     } while (charCode != 0);
@@ -270,7 +270,7 @@ function displayBSOD() {
 	_StdOut.advanceLine();
 	_StdOut.putText("  %ERROR CODE: A0DEAF00 0BABE000");
     _StdOut.advanceLine();
-	_StdOut.putText("TO AVOID ADDITIONAL LOSS OF DATA.")
+	_StdOut.putText("TO AVOID ADDITIONAL LOSS OF DATA.");
     _StdOut.advanceLine();
 	_StdOut.putText("PLEASE CONTACT OUR SUPPORT DEPARTMENT.");
     _StdOut.advanceLine();
