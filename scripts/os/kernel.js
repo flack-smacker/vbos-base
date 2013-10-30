@@ -60,7 +60,7 @@ function krnBootstrap()      // Page 8.
    // Enable the OS Interrupts.  (Not the CPU clock interrupt, as that is done in the hardware sim.)
    krnTrace("Enabling the interrupts.");
    krnEnableInterrupts();
-
+    
    // Launch the shell.
    krnTrace("Creating and Launching the shell.");
    _OsShell = new Shell();
@@ -167,28 +167,48 @@ function krnInterruptHandler(irq, params)    // This is the Interrupt Handler Ro
 function krnTimerISR()  // The built-in TIMER (not clock) Interrupt Service Routine (as opposed to an ISR coming from a device driver).
 {
     // Check multiprogramming parameters and enforce quanta here. Call the scheduler / context switch here if necessary.
-}   
+}
 
+/**
+ * The routine that is called when an executing program requests a system call. The type of system call is
+ * specified by the first parameter in the params array.
+ *
+ * @param params contains the parameters required by the specified system call
+ */
 function krnSystemCallIsr(params) {
-    if (params[0] == 1)
-    {
-        _StdOut.putText(params[1].toString());
-    }
-    else if (params[0] == 2)
-    {
-        var start = params[1];
-        var offset = 0;
-        var charCode = null;
-
-        do {
-            var charCode = parseInt(_MemoryManager.read(0, start + offset, 0), 16);
-            _StdOut.putText(String.fromCharCode(charCode));
-            offset += 1;
-        } while (charCode != 0);
-
+    if (params[0] == 1) {
+        displayInteger(params[1]);
+    } else if (params[0] == 2) {
+        displayString(params[1]);
     }
 }
 
+/**
+ * Prints the specified integer to standard output.
+ *
+ * @param toPrint an integer
+ */
+function displayInteger(toPrint) {
+    _StdOut.putText(toPrint.toString());
+}
+
+/**
+ * Prints the null-terminated string starting at the specified address to standard output.
+ *
+ * @param startAddress the address of the first character in the string
+ */
+function displayString(startAddress) {
+
+    var offset = 0; // The current offset into the string.
+    var charCode = null; // The current ASCII character located at (startAddress + offset).
+
+    do { // Loop until the null-terminator is encountered.
+        // Retrieve the next character from memory.
+        var charCode = parseInt(_MemoryManager.read(0, startAddress + offset, 0), 16);
+        _StdOut.putText(String.fromCharCode(charCode)); // Print the character to standard output.
+        offset += 1; // Point to the next character in the string.
+    } while (charCode != 0);
+}
 
 //
 // System Calls... that generate software interrupts via tha Application Programming Interface library routines.
@@ -270,7 +290,6 @@ function displayBSOD() {
  * @returns {ProcCtrlBlk.PID|*}
  */
 function krnNewProcess() {
-
     // Create the PCB
     var newPCB = new ProcCtrlBlk();
     // Assign it a PID
