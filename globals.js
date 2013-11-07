@@ -16,7 +16,7 @@ var APP_VERSION = "0.01";
 
 var CPU_CLOCK_INTERVAL = 100;   // This is in ms, or milliseconds, so 1000 = 1 second.
 
-var MEMORY_MAX = 256; // Size of main memory in bytes.
+var MEMORY_MAX = 768; // Size of main memory in bytes.
 
 var MAX_PROCESSES = 100 // The maximum number of processes that can exist on the system.
 var DEFAULT_PRIORITY = 1 // The default priority given to a newly created process.
@@ -29,6 +29,8 @@ var SYSTEM_CALL_IRQ = 2; // Used by a process to to request a system service.
 
 var PROCESS_COMPLETE_IRQ = 3; // Used by a process to indicate successful termination.
 
+var KERNEL_MODE = 0;
+var USER_MODE = 1;
 
 //
 // Global Variables
@@ -39,7 +41,7 @@ var _MainMemory = null;
 var _MemoryManager = null;
 var _OSclock = 0;       // Page 23.
 
-var _Mode = 0;   // 0 = Kernel Mode, 1 = User Mode.  See page 21.
+var _Mode = KERNEL_MODE;   // 0 = Kernel Mode, 1 = User Mode.  See page 21.
 
 var _Canvas = null;               // Initialized in hostInit().
 var _DrawingContext = null;       // Initialized in hostInit().
@@ -62,7 +64,7 @@ var _KernelInputQueue = null;
 // Process-related queues
 var _KernelReadyQueue = null;
 var _KernelPCBList = null;
-var _ActiveProcess = -1;
+var _ActiveProcess = null;
 
 // Standard input and output
 var _StdIn  = null;

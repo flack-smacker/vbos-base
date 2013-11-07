@@ -33,14 +33,14 @@ function MMU(memory) {
      * @param address the address to be written to
      * @param byteVal the value to be written
      */
-    this.write = function(pid, address, byteVal) {
+    this.write = function(address, byteVal) {
         // Perform the write only if the request is being made by the kernel
         // (indicated by a pid of 0), or if the process has access to the requested
         // memory address.
-        if (pid == 0 || this.rangeCheck(pid, address)) {
+        if (_Mode === KERNEL_MODE || this.rangeCheck(address)) {
             this.memory.write(address, ("0" + byteVal.toString(16)).substr(-2));
         } else {
-            krnTrapError("Memory Access Error: Write Requested by Unauthorized Process with PID: " + pid);
+            krnTrapError("Memory Access Error: Write Requested by Unauthorized Process.");
         }
     };
 
@@ -54,12 +54,12 @@ function MMU(memory) {
      * @param address the memory address where the read operation begins
      * @param offset an integer specifying the offset from the specified address
      */
-    this.read = function(pid, address, offset) {
+    this.read = function(address, offset) {
 
-        if ( pid == 0 ||this.rangeCheck(pid, (address + offset)) ) {
+        if (_Mode === KERNEL_MODE || this.rangeCheck(address + offset)) {
             return this.memory.readByte(address + offset);
         } else {
-            krnTrapError("Memory Access Error: Read Requested by Unauthorized Process with PID: " + pid);
+            krnTrapError("Memory Access Error: Read Requested by Unauthorized Process with PID.");
         }
     };
 
@@ -103,20 +103,16 @@ function MMU(memory) {
     };
 
     /**
-     * Determines whether the specified address is within the specified processes address space.
+     * Determines whether the specified address is within the address space of the currently executing process.
      *
-     * @param pid the process requesting the memory operation
      * @param address the memory address of the request
      * @returns {boolean}
      */
-    this.rangeCheck = function(pid, address) {
-
-        var pcb = _KernelPCBList[pid];
-
-        if (typeof pcb != 'undefined') {
-            return (address >= pcb.BASE_ADDRESS) && (address <= pcb.LIMIT);
+    this.rangeCheck = function(address) {
+        if (_ActiveProcess != null) {
+            return (address >= _ActiveProcess.BASE_ADDRESS) && (address <= _ActiveProcess.LIMIT);
         } else {
-            // TODO: Range check on a non-existent PID will always fail.
+            alert("Range check failed due to null _ActiveProcess.")// TODO: Range check on a non-existent PID will always fail.
         }
     }
 }

@@ -52,7 +52,7 @@ function Cpu() {
     this.instructions = {
 
         'A9': function() { // Load the accumulator with a constant.
-            _CPU.Acc = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 16);
+            _CPU.Acc = parseInt(_MemoryManager.read(_CPU.PC, 0), 16);
             _CPU.PC += 1;
         },
 
@@ -63,12 +63,12 @@ function Cpu() {
         },
 
         '8D': function() { // Write the value of the accumulator to memory.
-            var lowNyble = _MemoryManager.read(0, _CPU.PC, 0);
-            var highNyble = _MemoryManager.read(0, _CPU.PC, 1);
+            var lowNyble = _MemoryManager.read(_CPU.PC, 0);
+            var highNyble = _MemoryManager.read(_CPU.PC, 1);
 
             var toAddress = parseInt(highNyble + lowNyble, 16);
 
-            _MemoryManager.write(0, toAddress, _CPU.Acc);
+            _MemoryManager.write(toAddress, _CPU.Acc);
 
             _CPU.PC += 2;
         },
@@ -82,7 +82,7 @@ function Cpu() {
         },
 
         'A2': function() { // Load X register with a constant.
-            _CPU.Xreg = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 16);
+            _CPU.Xreg = parseInt(_MemoryManager.read(_CPU.PC, 0), 16);
             _CPU.PC += 1;
         },
 
@@ -95,7 +95,7 @@ function Cpu() {
         },
 
         'A0': function() { // Load Y register with a constant.
-            _CPU.Yreg = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 16);
+            _CPU.Yreg = parseInt(_MemoryManager.read(_CPU.PC, 0), 16);
             _CPU.PC += 1;
         },
 
@@ -126,7 +126,7 @@ function Cpu() {
         'D0': function() { // Branch X bytes if Z flag = 0
 
             if (_CPU.Zflag == 0) {
-                var offset = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 16);
+                var offset = parseInt(_MemoryManager.read(_CPU.PC, 0), 16);
 
                 _CPU.PC = _CPU.PC + offset
 
@@ -140,16 +140,16 @@ function Cpu() {
 
         'EE': function() { // Increment the value of a byte in memory.
 
-            var lowNyble = _MemoryManager.read(0, _CPU.PC, 0);
-            var highNyble = _MemoryManager.read(0, _CPU.PC, 1);
+            var lowNyble = _MemoryManager.read(_CPU.PC, 0);
+            var highNyble = _MemoryManager.read(_CPU.PC, 1);
             _CPU.PC += 2;
 
             var operandAddress = parseInt(highNyble + lowNyble, 16);
-            var operand =  parseInt(_MemoryManager.read(0, operandAddress, 0), 16);
+            var operand =  parseInt(_MemoryManager.read(operandAddress, 0), 16);
 
             operand += 1;
 
-            _MemoryManager.write(0, operandAddress, operand);
+            _MemoryManager.write(operandAddress, operand);
         },
 
         'FF': function() { // Print system call.
@@ -163,12 +163,12 @@ function Cpu() {
 
     function fetchOperand() {
 
-        var lowNyble = _MemoryManager.read(0, _CPU.PC, 0);
-        var highNyble = _MemoryManager.read(0, _CPU.PC, 1);
+        var lowNyble = _MemoryManager.read(_CPU.PC, 0);
+        var highNyble = _MemoryManager.read(_CPU.PC, 1);
         _CPU.PC += 2;
 
         var operandAddress = parseInt(highNyble + lowNyble, 16);
-        var operand =  parseInt(_MemoryManager.read(0, operandAddress, 0), 16);
+        var operand =  parseInt(_MemoryManager.read(operandAddress, 0), 16);
 
         return operand;
     }

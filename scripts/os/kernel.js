@@ -30,19 +30,18 @@ function krnBootstrap()      // Page 8.
    _KernelReadyQueue = new Queue();
    _KernelPCBList = new Array();
 
-   _Console = new CLIconsole();          // The command line interface / console I/O device.
-
-   // Initialize the CLIconsole.
-   _Console.init();
+   _Console = new CLIconsole();     // The command line interface / console I/O device.
+   _Console.init();                 // Initialize the CLIconsole.
 
    // Initialize standard input and output to the _Console.
    _StdIn  = _Console;
    _StdOut = _Console;
 
    // Load the Keyboard Device Driver
+    //TODO: Should that have a _global-style name?
    krnTrace("Loading the keyboard device driver.");
-   krnKeyboardDriver = new DeviceDriverKeyboard();     // Construct it.  TODO: Should that have a _global-style name?
-   krnKeyboardDriver.driverEntry();                    // Call the driverEntry() initialization routine.
+   krnKeyboardDriver = new DeviceDriverKeyboard();
+   krnKeyboardDriver.driverEntry();
    krnTrace(krnKeyboardDriver.status);
 
    // Load the status bar display.
@@ -157,7 +156,7 @@ function krnInterruptHandler(irq, params)    // This is the Interrupt Handler Ro
             krnSystemCallIsr(params);
             break;
         case PROCESS_COMPLETE_IRQ:
-            krnTerminateProcess(_KernelPCBList[_ActiveProcess]);
+            krnTerminateProcess(_ActiveProcess);
             break;
         default:
             krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");
@@ -176,11 +175,16 @@ function krnTimerISR()  // The built-in TIMER (not clock) Interrupt Service Rout
  * @param params contains the parameters required by the specified system call
  */
 function krnSystemCallIsr(params) {
+
+    _Mode = KERNEL_MODE;
+
     if (params[0] == 1) {
         displayInteger(params[1]);
     } else if (params[0] == 2) {
         displayString(params[1]);
     }
+
+    _Mode = USER_MODE;
 }
 
 /**
@@ -292,13 +296,13 @@ function displayBSOD() {
 function krnNewProcess() {
     // Create the PCB
     var newPCB = new ProcCtrlBlk();
-    // Assign it a PID
-    newPCB.PID = generatePID();
-    // Add the PCB to the kernels PCB list.
-    _KernelPCBList[newPCB.PID] = newPCB;
     // Allocate memory for the process.
     newPCB.BASE_ADDRESS = _MemoryManager.allocate(newPCB.PID);
     newPCB.LIMIT = newPCB.BASE_ADDRESS + 255;
+    // Assign it a PID
+    newPCB.PID = _KernelPCBList.length;
+    // Add the PCB to the kernels PCB list.
+    _KernelPCBList[newPCB.PID] = newPCB;
     // Return the PID to the caller.
     return newPCB.PID;
 }
@@ -311,51 +315,40 @@ function krnDispatchProcess(process) {
     // Update the process state.
     process.State = ProcessState.RUNNING;
     // Update the currently active process.
-    _ActiveProcess = process.PID;
+    _ActiveProcess = _KernelPCBList[process.PID];
+    // Change the mode to user mode.
+    // We don't want to give the user program kernel powers.
+    _Mode = 1;
     // Update the PCB display
     updatePCBDisplay();
-
 }
 
 function krnTerminateProcess(process) {
-    process.State = ProcessState.TERMINATED;
-    // Update the PCB display
+	// Write the contents of the PCB to the PCB display.
     updatePCBDisplay();
-    // Reset the CPU registers.
-    _CPU.init();
+    // Update the process state.
+	process.State = ProcessState.TERMINATED;
     // Free the memory allocated to this process.
     _MemoryManager.deallocate(process.PID);
-    // Delete the PCB associated with this process.
-    delete _KernelPCBList[process.PID];
-    // Reset the PID of the active process.
-    _ActiveProcess = -1;
-    // Refresh Main Memory
+	// Refresh Main Memory
     refreshDisplay();
-    _StdOut.advanceLine();
+    // Delete the PCB associated with this process.
+    _KernelPCBList.shift();
+    // Reset the PID of the active process.
+    _ActiveProcess = null;
+    // Reset the CPU registers.
+    _CPU.init();
+    // Reset the console display.
+	_StdOut.advanceLine();
     _StdOut.putText(">");
-
-}
-/**
- * Generates an integer PID within the range of 0 to MAX_PROCESSES
- *
- * @returns {*}
- */
-function generatePID() {
-    var candidate;
-
-    do { // loop until an unused PID is generated
-        candidate = Math.floor(Math.random()*100) % MAX_PROCESSES;
-    } while (typeof _KernelPCBList[candidate] != 'undefined');
-
-    return candidate;
 }
 
 function updatePCBDisplay() {
-    var pcb = _KernelPCBList[_ActiveProcess];
-    var pcbState = "PID: " + pcb.PID + "\n" +
-        "STATE: " + pcb.State + "\n" +
-        "BASE ADDRESS: " + pcb.BASE_ADDRESS + "\n" +
-        "LIMIT: " + pcb.LIMIT + "\n" +
+
+    var pcbState = "PID: " + _ActiveProcess.PID + "\n" +
+        "STATE: " + _ActiveProcess.State + "\n" +
+        "BASE ADDRESS: " + _ActiveProcess.BASE_ADDRESS + "\n" +
+        "LIMIT: " + _ActiveProcess.LIMIT + "\n" +
         "PC: " + _CPU.PC + "\n" +
         "ACC: " + _CPU.Acc + "\n" +
         "X: " + _CPU.Xreg + "\n" +

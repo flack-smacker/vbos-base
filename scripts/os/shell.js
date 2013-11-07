@@ -509,9 +509,11 @@ function loadProgram() {
         // create a new process
         var pid = krnNewProcess();
         // load the program code into main memory
+        _Mode = KERNEL_MODE;
         for (var i = 0; i < src.length; i++) {
-            _MemoryManager.write(pid, i, src[i].trim());
+            _MemoryManager.write(i, src[i].trim());
         }
+        _Mode = USER_MODE;
         // refresh the memory display device
         refreshDisplay();
         // return pid to the console
