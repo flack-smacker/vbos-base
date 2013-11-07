@@ -22,12 +22,13 @@ var MAX_PROCESSES = 100 // The maximum number of processes that can exist on the
 var DEFAULT_PRIORITY = 1 // The default priority given to a newly created process.
 
 var TIMER_IRQ = 0;  // Pages 23 (timer), 9 (interrupts), and 561 (interrupt priority).
-                    // NOTE: The timer is different from hardware/host clock pulses. Don't confuse these.
-var KEYBOARD_IRQ = 1;
-
+var KEYBOARD_IRQ = 1; // The interrupt code used by the keyboard device.
 var SYSTEM_CALL_IRQ = 2; // Used by a process to to request a system service.
-
 var PROCESS_COMPLETE_IRQ = 3; // Used by a process to indicate successful termination.
+var MEMORY_MANAGER_IRQ = 4; // The interrupt code used to specify a MMU interrupt.
+
+var ACCESS_VIOLATION_ERROR = 0; // Indicates that a process attempted to access a restricted/invalid memory location.
+var OUT_OF_MEMORY_ERROR = 1; // Indicates a failed allocation attempt by the kernel.
 
 var KERNEL_MODE = 0;
 var USER_MODE = 1;
@@ -39,9 +40,9 @@ var _CPU = null;
 
 var _MainMemory = null;
 var _MemoryManager = null;
-var _OSclock = 0;       // Page 23.
+var _OSclock = 0;
 
-var _Mode = KERNEL_MODE;   // 0 = Kernel Mode, 1 = User Mode.  See page 21.
+var _Mode = KERNEL_MODE;   // 0 = Kernel Mode, 1 = User Mode. 
 
 var _Canvas = null;               // Initialized in hostInit().
 var _DrawingContext = null;       // Initialized in hostInit().
@@ -61,7 +62,7 @@ var _KernelInterruptQueue = null;
 var _KernelBuffers = null;
 var _KernelInputQueue = null;
 
-// Process-related queues
+// Process-related data structures
 var _KernelReadyQueue = null;
 var _KernelPCBList = null;
 var _ActiveProcess = null;

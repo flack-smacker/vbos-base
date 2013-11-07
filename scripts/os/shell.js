@@ -491,29 +491,27 @@ function validateSourceCode(tokens) {
 }
 
 /**
- * Loads the source code from the user input area into main memory.
+ * Parses the source code in the user input area and passes it to the kernel. 
+ * The kernel is responsible for loading the code into main memory and creating
+ * a new process representing the program.
  */
 function loadProgram() {
 
     // First check if the user typed in any source code.
     if (_userInputArea.value.length == 0) {
-        _StdOut.putText("Source code not found.");
+        _StdOut.putText("You did not enter any source code. Try again.");
         return;
     }
-    // Ok, so there is source code...lets validate it.
+	
+    // There is some source code...lets validate it.
     var src = _userInputArea.value.trim().split(" ");
     var isValid = validateSourceCode(src);
 
-    // Its valid, do stuff.
+    // The source contains valid syntax, feed it to the kernel
+	// and assume that it is not a virus.
     if (isValid) {
         // create a new process
-        var pid = krnNewProcess();
-        // load the program code into main memory
-        _Mode = KERNEL_MODE;
-        for (var i = 0; i < src.length; i++) {
-            _MemoryManager.write(i, src[i].trim());
-        }
-        _Mode = USER_MODE;
+        var pid = krnNewProcess(src);
         // refresh the memory display device
         refreshDisplay();
         // return pid to the console

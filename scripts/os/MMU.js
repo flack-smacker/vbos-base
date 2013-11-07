@@ -10,16 +10,17 @@
 function MMU(memory) {
 
     this.memory = memory; // A reference to the memory "hardware"
-    this.PARTITION_SIZE = 256; // The partition size.
-    this.freeList = []; // A list of address ranges representing free blocks of memory.
+	this.freeList = []; // A list of address ranges representing free blocks of memory.
     this.memoryMap = {}; // A list of pid -> address range mappings.
-
+	this.PARTITION_SIZE = 256; // The maximum partition size.
+	
+	
     /**
      * Initializes the free list.
      */
     this.init = function() {
         for (var i = 0; i < MEMORY_MAX; i+= this.PARTITION_SIZE) {
-            this.freeList.push([i, i + 255]);
+            this.freeList.push([i, i + (this.PARTITION_SIZE - 1)]);
         }
     };
 
@@ -29,18 +30,16 @@ function MMU(memory) {
      * Assumptions:
      *      The specified memory address is within the requesting processes address space.
      *
-     * @param pid the process making the write request
      * @param address the address to be written to
      * @param byteVal the value to be written
      */
     this.write = function(address, byteVal) {
-        // Perform the write only if the request is being made by the kernel
-        // (indicated by a pid of 0), or if the process has access to the requested
-        // memory address.
+        // Perform the write only if the request is being made by the kernel,
+        // or if the process has access to the requested memory address.
         if (_Mode === KERNEL_MODE || this.rangeCheck(address)) {
             this.memory.write(address, ("0" + byteVal.toString(16)).substr(-2));
         } else {
-            krnTrapError("Memory Access Error: Write Requested by Unauthorized Process.");
+            _KernelInterruptQueue.enqueue(new Interrupt(MEMORY_MANAGER_IRQ, [ACCESS_VIOLATION_ERROR, _ActiveProcess.PID]));
         }
     };
 
@@ -50,7 +49,6 @@ function MMU(memory) {
      * Assumptions:
      *      The address + offset + nBtyes is within the requesting processes address space.
      *
-     * @param pid the process making the read request
      * @param address the memory address where the read operation begins
      * @param offset an integer specifying the offset from the specified address
      */
@@ -59,7 +57,7 @@ function MMU(memory) {
         if (_Mode === KERNEL_MODE || this.rangeCheck(address + offset)) {
             return this.memory.readByte(address + offset);
         } else {
-            krnTrapError("Memory Access Error: Read Requested by Unauthorized Process with PID.");
+            _KernelInterruptQueue.enqueue(new Interrupt(MEMORY_MANAGER_IRQ, [ACCESS_VIOLATION_ERROR, _ActiveProcess.PID]));
         }
     };
 
@@ -79,7 +77,7 @@ function MMU(memory) {
             // Return the first address of the range.
             return freeRange[0];
         } else { // If there is no free memory than throw an error.
-            krnTrapError("Out-Of-Memory Error: Unable to satisfy allocation request.");
+            _KernelInterruptQueue.enqueue(new Interrupt(MEMORY_MANAGER_IRQ, [OUT_OF_MEMORY_ERROR, pid]));
         }
     };
 

@@ -64,7 +64,10 @@ function krnBootstrap()      // Page 8.
    krnTrace("Creating and Launching the shell.");
    _OsShell = new Shell();
    _OsShell.init();
-
+   
+   // Don't leave the kernel in GOD MODE!
+   _Mode = USER_MODE;
+   
    // Finally, initiate testing.
    if (_GLaDOS) {
       _GLaDOS.afterStartup();
@@ -158,6 +161,8 @@ function krnInterruptHandler(irq, params)    // This is the Interrupt Handler Ro
         case PROCESS_COMPLETE_IRQ:
             krnTerminateProcess(_ActiveProcess);
             break;
+		case MEMORY_MANAGER_IRQ:
+			krnMemoryManagerIsr(params);
         default:
             krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");
     }
@@ -166,6 +171,10 @@ function krnInterruptHandler(irq, params)    // This is the Interrupt Handler Ro
 function krnTimerISR()  // The built-in TIMER (not clock) Interrupt Service Routine (as opposed to an ISR coming from a device driver).
 {
     // Check multiprogramming parameters and enforce quanta here. Call the scheduler / context switch here if necessary.
+}
+
+function krnMemoryManagerIsr(params) {
+	
 }
 
 /**
@@ -289,22 +298,39 @@ function displayBSOD() {
 
 }
 /**
- * Creates a new process and adds it to the PCB list.
- *
+ * Creates a new process for the specified source program and adds it to the PCB list.
+ * When this method returns a new process will have been created and the source code
+ * specified by src will have been loaded into memory. If this does not hold true then
+ * this method is effectively useless.
+ 
  * @returns {ProcCtrlBlk.PID|*}
  */
-function krnNewProcess() {
-    // Create the PCB
+function krnNewProcess(src) {
+    
+	// First try to allocate memory for the process...
+    var newPID = _KernelPCBList.length; // ...which requires a PID.
+	var baseAddr = _MemoryManager.allocate(newPID);
+	
+	// The allocation was successful so create the PCB
     var newPCB = new ProcCtrlBlk();
-    // Allocate memory for the process.
-    newPCB.BASE_ADDRESS = _MemoryManager.allocate(newPCB.PID);
+	
+	// Assign the base and limit addresses and the PID.
+    newPCB.BASE_ADDRESS = baseAddr;
     newPCB.LIMIT = newPCB.BASE_ADDRESS + 255;
-    // Assign it a PID
-    newPCB.PID = _KernelPCBList.length;
+	newPCB.PID = newPID;
+    
     // Add the PCB to the kernels PCB list.
     _KernelPCBList[newPCB.PID] = newPCB;
+	
+	// Go ahead and load the source code into main memory...
+	_Mode = KERNEL_MODE;
+        for (var i = 0; i < src.length; i++) {
+            _MemoryManager.write(i + baseAddr, src[i].trim());
+        }
+    _Mode = USER_MODE;
+	
     // Return the PID to the caller.
-    return newPCB.PID;
+    return newPID;
 }
 
 function krnDispatchProcess(process) {
@@ -318,7 +344,7 @@ function krnDispatchProcess(process) {
     _ActiveProcess = _KernelPCBList[process.PID];
     // Change the mode to user mode.
     // We don't want to give the user program kernel powers.
-    _Mode = 1;
+    _Mode = USER_MODE;
     // Update the PCB display
     updatePCBDisplay();
 }

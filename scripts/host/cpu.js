@@ -35,7 +35,7 @@ function Cpu() {
         // TODO: Accumulate CPU usage and profiling statistics here.
 
         // Fetch the next instruction.
-        var opcode = _MemoryManager.read(0, this.PC, 0);
+        var opcode = _MemoryManager.read(this.PC, 0);
 
         // Increment the Program Counter
         this.PC += 1;
@@ -161,6 +161,9 @@ function Cpu() {
         }
     };
 
+	/**
+	 * Fetches a two-byte operand starting from the memory address currently pointed to be the program counter.
+	 */
     function fetchOperand() {
 
         var lowNyble = _MemoryManager.read(_CPU.PC, 0);
