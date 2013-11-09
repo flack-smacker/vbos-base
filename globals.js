@@ -17,6 +17,7 @@ var APP_VERSION = "0.01";
 var CPU_CLOCK_INTERVAL = 100;   // This is in ms, or milliseconds, so 1000 = 1 second.
 
 var MEMORY_MAX = 768; // Size of main memory in bytes.
+var PARTITION_SIZE = 256; // Address space size in bytes.
 
 var MAX_PROCESSES = 100 // The maximum number of processes that can exist on the system.
 var DEFAULT_PRIORITY = 1 // The default priority given to a newly created process.
@@ -26,6 +27,7 @@ var KEYBOARD_IRQ = 1; // The interrupt code used by the keyboard device.
 var SYSTEM_CALL_IRQ = 2; // Used by a process to to request a system service.
 var PROCESS_COMPLETE_IRQ = 3; // Used by a process to indicate successful termination.
 var MEMORY_MANAGER_IRQ = 4; // The interrupt code used to specify a MMU interrupt.
+var CONTEXT_SWITCH_IRQ = 5; // The interrupt code used by the CPU to specify a context switch.
 
 var ACCESS_VIOLATION_ERROR = 0; // Indicates that a process attempted to access a restricted/invalid memory location.
 var OUT_OF_MEMORY_ERROR = 1; // Indicates a failed allocation attempt by the kernel.
@@ -68,6 +70,7 @@ var _KernelResidentList = null;
 var _ActiveProcess = null;
 var _nextPID = 0;
 var _Quantum = 6;
+var _Scheduler = null;
 
 // Standard input and output
 var _StdIn  = null;

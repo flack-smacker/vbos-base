@@ -523,18 +523,19 @@ function loadProgram() {
     }
 }
 
-function executeProcess(pid) {
-
-    // Get the PCB associated with the specified PID.
-    var toExecute = _KernelResidentList[pid];
-
+/**
+* Executes the process specified by PID. This method 
+* delegates the necessary scheduling work to the kernel.
+*/
+function executeProcess(args) {
+	// Grab the PID from the params list.
+	var toExecutePID = args[0];
     // This check ensures that the specified PID is valid.
-    if (typeof toExecute != 'undefined') {
-        _KernelReadyQueue.enqueue(toExecute);
+    if (typeof _KernelResidentList[toExecutePID] != 'undefined') {
+        krnScheduleProcess(toExecutePID);
     } else {
         _StdOut.putText("Unable to execute process. Invalid PID " + pid);
     }
-
 }
 
 // Causes a catastrophic error resulting in a BSOD.
