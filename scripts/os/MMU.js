@@ -2,7 +2,7 @@
  * A software simulation of a memory management unit (MMU).
  * The MMU is responsible for managing access to main memory. Its primary responsibilities
  * include allocation and de-allocation of memory blocks and allowing authorized read/write
- * access to main memory.It currently uses a fixed-size partition allocation scheme,
+ * access to main memory. It currently uses a fixed-size partition allocation scheme,
  * with main memory divided into three 256 byte chunks for a total of 768 bytes of main memory.
  *
  * Created by Joe Muro on 9/30/13. **/
@@ -34,13 +34,20 @@ function MMU(memory) {
      * @param byteVal the value to be written
      */
     this.write = function(address, byteVal) {
-        // Perform the write only if the request is being made by the kernel,
-        // or if the process has access to the requested memory address.
-        if (_Mode === KERNEL_MODE || this.rangeCheck(address)) {
+        if (_Mode === KERNEL_MODE) { // This is a kernel-mode process...
+			// ...just do it.
             this.memory.write(address, ("0" + byteVal.toString(16)).substr(-2));
-        } else {
-            _KernelInterruptQueue.enqueue(new Interrupt(MEMORY_MANAGER_IRQ, [ACCESS_VIOLATION_ERROR, _ActiveProcess.PID]));
-        }
+        } else { // This is a user-mode process...
+			// Get the base address of the requesting process.
+			var baseAddr = this.memoryMap[_ActiveProcess.PID][0];
+			// Verify that the process has access to the requested address.
+			if (this.rangeCheck(baseAddr + address)) {
+				// Add the baseAddr to the address and perform the write.
+				this.memory.write(baseAddr + address, ("0" + byteVal.toString(16)).substr(-2));
+			} else { // The range check failed.
+				_KernelInterruptQueue.enqueue(new Interrupt(MEMORY_MANAGER_IRQ, [ACCESS_VIOLATION_ERROR, _ActiveProcess.PID]));
+			}
+		}
     };
 
     /**
@@ -53,14 +60,24 @@ function MMU(memory) {
      * @param offset an integer specifying the offset from the specified address
      */
     this.read = function(address, offset) {
-
-        if (_Mode === KERNEL_MODE || this.rangeCheck(address + offset)) {
+        if (_Mode === KERNEL_MODE) { // This is a kernel-mode process...
+			// ...just do it.
             return this.memory.readByte(address + offset);
-        } else {
-            _KernelInterruptQueue.enqueue(new Interrupt(MEMORY_MANAGER_IRQ, [ACCESS_VIOLATION_ERROR, _ActiveProcess.PID]));
-        }
+        } else { // This is a user-mode process
+			// Get the base address of the requesting process.
+			var baseAddr = this.memoryMap[_ActiveProcess.PID][0];
+			// Verify that the process has access to the requested address.
+			if (this.rangeCheck(baseAddr + address)) {
+				// Add the baseAddr to the address and perform the write.
+				return this.memory.readByte(baseAddr + address + offset);
+			} else { // The range check failed.
+				_KernelInterruptQueue.enqueue(new Interrupt(MEMORY_MANAGER_IRQ, [ACCESS_VIOLATION_ERROR, _ActiveProcess.PID]));
+			}
+		}
     };
 
+	
+	// return this.memory.readByte(address + offset);
     /**
      * Allocates a block of 256 bytes to the process specified by pid and returns the address of the first free byte.
      *
@@ -96,7 +113,7 @@ function MMU(memory) {
             // Clear the memory held by this process.
             this.memory.clear(range[0], range[1]);
             // Add the newly freed block to the free list.
-            this.freeList.push(range);
+            this.freeList.unshift(range);
         }
     };
 

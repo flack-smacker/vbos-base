@@ -64,8 +64,10 @@ var _KernelInputQueue = null;
 
 // Process-related data structures
 var _KernelReadyQueue = null;
-var _KernelPCBList = null;
+var _KernelResidentList = null;
 var _ActiveProcess = null;
+var _nextPID = 0;
+var _Quantum = 6;
 
 // Standard input and output
 var _StdIn  = null;

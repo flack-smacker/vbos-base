@@ -28,7 +28,7 @@ function krnBootstrap()      // Page 8.
 
    // Process related queues.
    _KernelReadyQueue = new Queue();
-   _KernelPCBList = new Array();
+   _KernelResidentList = {};
 
    _Console = new CLIconsole();     // The command line interface / console I/O device.
    _Console.init();                 // Initialize the CLIconsole.
@@ -184,16 +184,11 @@ function krnMemoryManagerIsr(params) {
  * @param params contains the parameters required by the specified system call
  */
 function krnSystemCallIsr(params) {
-
-    _Mode = KERNEL_MODE;
-
     if (params[0] == 1) {
         displayInteger(params[1]);
     } else if (params[0] == 2) {
         displayString(params[1]);
     }
-
-    _Mode = USER_MODE;
 }
 
 /**
@@ -217,7 +212,7 @@ function displayString(startAddress) {
 
     do { // Loop until the null-terminator is encountered.
         // Retrieve the next character from memory.
-        charCode = parseInt(_MemoryManager.read(0, startAddress + offset, 0), 16);
+        charCode = parseInt(_MemoryManager.read(startAddress, offset), 16);
         _StdOut.putText(String.fromCharCode(charCode)); // Print the character to standard output.
         offset += 1; // Point to the next character in the string.
     } while (charCode != 0);
@@ -308,7 +303,7 @@ function displayBSOD() {
 function krnNewProcess(src) {
     
 	// First try to allocate memory for the process...
-    var newPID = _KernelPCBList.length; // ...which requires a PID.
+    var newPID = _nextPID++; // ...which requires a PID.
 	var baseAddr = _MemoryManager.allocate(newPID);
 	
 	// The allocation was successful so create the PCB
@@ -320,12 +315,12 @@ function krnNewProcess(src) {
 	newPCB.PID = newPID;
     
     // Add the PCB to the kernels PCB list.
-    _KernelPCBList[newPCB.PID] = newPCB;
+    _KernelResidentList[newPCB.PID] = newPCB;
 	
 	// Go ahead and load the source code into main memory...
 	_Mode = KERNEL_MODE;
-        for (var i = 0; i < src.length; i++) {
-            _MemoryManager.write(i + baseAddr, src[i].trim());
+        for (var offset = 0; offset < src.length; offset++) {
+            _MemoryManager.write(offset + baseAddr, src[offset].trim());
         }
     _Mode = USER_MODE;
 	
@@ -335,13 +330,13 @@ function krnNewProcess(src) {
 
 function krnDispatchProcess(process) {
     // Set the program counter to the address of the first instruction.
-    _CPU.PC = process.BASE_ADDRESS;
+    _CPU.PC = 0;
     // Inform the kernel that there is work to be done.
     _CPU.isExecuting = true;
     // Update the process state.
     process.State = ProcessState.RUNNING;
     // Update the currently active process.
-    _ActiveProcess = _KernelPCBList[process.PID];
+    _ActiveProcess = _KernelResidentList[process.PID];
     // Change the mode to user mode.
     // We don't want to give the user program kernel powers.
     _Mode = USER_MODE;
@@ -359,11 +354,12 @@ function krnTerminateProcess(process) {
 	// Refresh Main Memory
     refreshDisplay();
     // Delete the PCB associated with this process.
-    _KernelPCBList.shift();
-    // Reset the PID of the active process.
+    delete _KernelResidentList[process.PID];
+	_nextPID -= 1;
     _ActiveProcess = null;
-    // Reset the CPU registers.
+    // Reset the CPU.
     _CPU.init();
+	_CPU.isExecuting = false;
     // Reset the console display.
 	_StdOut.advanceLine();
     _StdOut.putText(">");

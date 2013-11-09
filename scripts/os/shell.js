@@ -526,7 +526,7 @@ function loadProgram() {
 function executeProcess(pid) {
 
     // Get the PCB associated with the specified PID.
-    var toExecute = _KernelPCBList[pid];
+    var toExecute = _KernelResidentList[pid];
 
     // This check ensures that the specified PID is valid.
     if (typeof toExecute != 'undefined') {
