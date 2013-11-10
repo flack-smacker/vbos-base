@@ -17,7 +17,7 @@ function RoundRobinScheduler(quantum) {
      */
     this.doExecute = function() {
 		if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
-			if (this.cycles === quantum) { // Check if this process exceeded the specified quantum.
+			if (this.cycles === _Quantum) { // Check if this process exceeded the specified quantum.
 				krnTrace("Process with PID " + _ActiveProcess.PID + " exhausted quantum. Checking ready queue for the next process to execute.");
 				// Reset the cycle count;
 				this.cycles = 0;
@@ -44,21 +44,31 @@ function RoundRobinScheduler(quantum) {
 	};
 	
 	this.doDispatch = function(pid) {
+		
 		// Log scheduling events...
 		krnTrace("Dispatching process with PID " + pid + " to CPU0.");
+		
 		// Retrieve the PCB associated with this PID.
 		var toDispatch = _KernelResidentList[pid];
-		// Set the program counter to the address of the next instruction.
-		_CPU.PC = toDispatch.PC;
-		// Inform the kernel that there is work to be done.
-		_CPU.isExecuting = true;
-		// Update the process state.
+		// Update the PCB with the new process state.
 		toDispatch.State = ProcessState.RUNNING;
 		// Update the currently active process.
 		_ActiveProcess = _KernelResidentList[toDispatch.PID];
+		
+		// Restore the state of the CPU.
+		_CPU.PC = toDispatch.PC;
+		_CPU.Acc = toDispatch.Acc;
+		_CPU.Xreg = toDispatch.Xreg;
+		_CPU.Yreg = toDispatch.Yreg;
+		_CPU.Zflag = toDispatch.Zflag;
+		
 		// Change the mode to user mode.
 		// We don't want to give the user program kernel powers.
 		_Mode = USER_MODE;
+		
+		// Inform the kernel that there is work to be done.
+		_CPU.isExecuting = true;
+		
 		// Update the PCB display
 		updatePCBDisplay();
 	};

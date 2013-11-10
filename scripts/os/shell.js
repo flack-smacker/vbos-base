@@ -114,6 +114,27 @@ function shellInit() {
     sc.description = " - Executes a user program that exists in memory.";
     sc.function = executeProcess;
     this.commandList[this.commandList.length] = sc;
+	
+	// quantum - Sets the quantum value.
+    sc = new ShellCommand();
+    sc.command = "quantum";
+    sc.description = " - Sets the CPU burst time.";
+    sc.function = shellSetQuantum;
+    this.commandList[this.commandList.length] = sc;
+	
+	// ps - Displays the PIDs of all active process.
+    sc = new ShellCommand();
+    sc.command = "ps";
+    sc.description = " - List the PIDs of all active processes.";
+    sc.function = shellPs;
+    this.commandList[this.commandList.length] = sc;
+	
+	// runall - Schedules all resident processes for execution.
+    sc = new ShellCommand();
+    sc.command = "runall";
+    sc.description = " - Execute all resident processes.";
+    sc.function = shellRunAll;
+    this.commandList[this.commandList.length] = sc;
 
 	// BSOD - provide a mechanism for testing the kernel error trap function
 	sc = new ShellCommand();
@@ -129,7 +150,6 @@ function shellInit() {
 	sc.function = shellSetStatus;
 	this.commandList[this.commandList.length] = sc;
 	
-    // processes - list the running processes and their IDs
     // kill <id> - kills the specified process id.
 
     //
@@ -241,6 +261,54 @@ function shellExecute(fn, args)
     this.putPrompt();
 }
 
+/**
+* Schedules all resident processes for execution.
+*/
+function shellRunAll() {
+	for (var pid = 0; pid < 3; pid+=1) {
+		if (_KernelResidentList.hasOwnProperty(pid)) {
+			executeProcess([pid]);
+		}
+	}
+}
+
+/**
+* Allows the user to modify the quantum value. 
+*/
+function shellSetQuantum(args) {
+	// We only care about the first element of the args array.
+	var number = Number(args[0]);
+	
+	if (typeof number !== 'number' || args < 0) { // Verify that the user entered a number.
+		_StdOut.putText("Invalid quantum value. Must be an integer > 0.");
+	} else { // Set the quantum and inform the user.
+		_Quantum = number;
+		_StdOut.putText("Quantum initialized to " + number);
+	}
+}
+
+/**
+* Displays all currently executing processes.
+*/
+function shellPs() {
+	
+	// Dummy var to hold the final output string.
+	var output = '';
+	
+	// Enumerate over all keys on the ready queue. Each key 
+	// represents a PID of a process either in execution or 
+	// awaiting execution by the scheduler.
+	for (var pid in _KernelReadyQueue) {
+		if (_KernelReadyQueue.hasOwnProperty(pid)) {
+			_StdOut.putText(' -' + pid);
+		}
+	}
+	
+	// Make sure to include the PID of the currently executing process.
+	if (_ActiveProcess !== undefined) {
+		_StdOut.putText(' -' + _ActiveProcess.PID);
+	}
+}
 
 //
 // The rest of these functions ARE NOT part of the Shell "class" (prototype, more accurately),
