@@ -348,7 +348,6 @@ function shellKillPs(args) {
 			if (_KernelReadyQueue.q[i] === pid) { // If this is the specified process.
 				delete _KernelReadyQueue.q[i] // Remove it from the ready queue.
 				krnTerminateProcess(_KernelResidentList[pid]); // Terminate it.
-				break; // Break out of the for loop.
 				return;
 			}
 		}
