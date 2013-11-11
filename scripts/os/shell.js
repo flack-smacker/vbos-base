@@ -41,7 +41,7 @@ function shellInit() {
     // shutdown
     sc = new ShellCommand();
     sc.command = "shutdown";
-    sc.description = "- Shuts down the virtual OS but leaves the underlying hardware simulation running.";
+    sc.description = "- Shuts down the virtual OS.";
     sc.function = shellShutdown;
     this.commandList[this.commandList.length] = sc;
 
@@ -118,7 +118,7 @@ function shellInit() {
 	// quantum - Sets the quantum value.
     sc = new ShellCommand();
     sc.command = "quantum";
-    sc.description = " - Sets the CPU burst time.";
+    sc.description = " <int> - Sets the CPU burst time.";
     sc.function = shellSetQuantum;
     this.commandList[this.commandList.length] = sc;
 	
@@ -139,7 +139,7 @@ function shellInit() {
 	// kill - Terminates an active process immediately.
     sc = new ShellCommand();
     sc.command = "kill";
-    sc.description = " - Terminates the active process specified by PID resident processes.";
+    sc.description = " <pid> - Terminates the specified process.";
     sc.function = shellKillPs;
     this.commandList[this.commandList.length] = sc;
 	
@@ -300,39 +300,61 @@ function shellSetQuantum(args) {
 function shellPs() {
 	
 	// Dummy var to hold the final output string.
-	var output = '';
+	var output = [];
 	
 	// Make sure to include the PID of the currently executing process.
 	if (_ActiveProcess !== undefined && _ActiveProcess !== null) {
-		output += "  " + _ActiveProcess.PID + "  " + " executing\n";
+		output[output.length] = "  " + _ActiveProcess.PID + "  " + "  executing";
 	}
 	
 	// Enumerate over all keys on the ready queue. Each key 
 	// represents a PID of a process either in execution or 
 	// awaiting execution by the scheduler.
-	for (var pid = 0; pid < MAX_PROCESSES; pid +=1) {
-		if (_KernelReadyQueue.hasOwnProperty(pid)) {
-			output += "  " + pid + '  ' + " ready\n";
-		}
+	for (var i = 0; i < _KernelReadyQueue.getSize(); i+=1) {
+			output[output.length] = "  " + _KernelReadyQueue.q[i] + "  " + "  waiting/ready";
 	}
 	
-	if (output.length > 0) {
-		_StdOut.putText(output);
-	} else {
+	if (output.length > 0) { // If there are any active processes.
+		// Print the header
+		_StdOut.putText("  PID  STATUS");
+		_StdOut.advanceLine();
+		// Print the active process information.
+		for (var i=0; i < output.length; i+=1) {
+			_StdOut.putText(output[i]);
+			_StdOut.advanceLine();
+		}
+	} else { // If there are no active processes.
 		_StdOut.putText("  There are currently 0 active processes.");
 	}
 }
 
 function shellKillPs(args) {
-	// We only care about the first element of the args array.
-	var number = Number(args[0]);
+
+	var pid = Number(args[0]); // Grab the PID input  by the user.
 	
-	if (typeof number !== 'number' || args < 0) { // Verify that the user entered a number.
+	if (isNaN(pid)) { // Verify that the user entered a number.
 		_StdOut.putText("Invalid PID value. Must be an integer.");
-	} else { // Set the quantum and inform the user.
-		_Quantum = number;
-		_StdOut.putText("Quantum initialized to " + number);
+		return;
 	}
+	
+	// Check if the process to kill is currently executing.
+	if (_ActiveProcess !== undefined && _ActiveProcess !== null) {
+		if(_ActiveProcess.PID === pid) { // It is...
+			krnTerminateProcess(_KernelResidentList[pid]); // Terminate it.
+			return;
+		}
+	} else { // Check if the process is on the ready queue. 
+		for (var i = 0; i < _KernelReadyQueue.getSize(); i+=1) { // Enumerate over all processes on the ready queue.
+			if (_KernelReadyQueue.q[i] === pid) { // If this is the specified process.
+				delete _KernelReadyQueue.q[i] // Remove it from the ready queue.
+				krnTerminateProcess(_KernelResidentList[pid]); // Terminate it.
+				break; // Break out of the for loop.
+				return;
+			}
+		}
+	}
+	
+	_StdOut.putText("Cannot kill process with PID " + pid + " because the process does not exist.");
 }
 
 //

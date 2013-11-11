@@ -19,25 +19,18 @@ function RoundRobinScheduler(quantum) {
 		if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
 			if (this.cycles === _Quantum) { // Check if this process exceeded the specified quantum.
 				krnTrace("Process with PID " + _ActiveProcess.PID + " exhausted quantum. Checking ready queue for the next process to execute.");
-				// Reset the cycle count;
-				this.cycles = 0;
-				// Prevent the CPU from executing work until the context-switch completes.
-				_CPU.isExecuting = false;
-				// Schedule a context-switch
-				_KernelInterruptQueue.enqueue(new Interrupt(CONTEXT_SWITCH_IRQ, [_ActiveProcess.PID]));
+				this.cycles = 0; // Reset the cycle count;
+				_CPU.isExecuting = false; // Prevent the CPU from executing work until the context-switch completes.
+				_KernelInterruptQueue.enqueue(new Interrupt(CONTEXT_SWITCH_IRQ, [_ActiveProcess.PID])); // Schedule a context-switch
+				_ActiveProcess = null; // Indicate an idle CPU.
 			} else {
-				// Increment the count of cycles.
-				this.cycles++;
-				// Perform another CPU cycle.
-				_CPU.cycle();
+				this.cycles++; // Increment the count of cycles.
+				_CPU.cycle(); // Perform another CPU cycle.
 			}
 		} else if (_KernelReadyQueue.getSize() > 0) { // If there is no work currently executing then check the ready queue.
-			// Get the PID of the process to be executed.
-			var pid = _KernelReadyQueue.dequeue();
-			// Log scheduling events...
-			krnTrace("Retrieving process with PID " + pid + " from ready queue.");
-			// Dispatch the process to the CPU for execution.
-			this.doDispatch(pid);
+			krnTrace("Retrieving process with PID " + pid + " from ready queue."); // Log scheduling events...
+			var pid = _KernelReadyQueue.dequeue(); // Get the PID of the process to be executed.
+			this.doDispatch(pid); // Dispatch the process to the CPU for execution.
 		} else { // If there are no interrupts and there is nothing being executed then just be idle.
 		   krnTrace("Idle");
 		}
