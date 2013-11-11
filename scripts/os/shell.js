@@ -41,7 +41,7 @@ function shellInit() {
     // shutdown
     sc = new ShellCommand();
     sc.command = "shutdown";
-    sc.description = "- Shuts down the virtual OS but leaves the underlying hardware simulation running.";
+    sc.description = "- Shuts down the virtual OS.";
     sc.function = shellShutdown;
     this.commandList[this.commandList.length] = sc;
 
@@ -114,7 +114,35 @@ function shellInit() {
     sc.description = " - Executes a user program that exists in memory.";
     sc.function = executeProcess;
     this.commandList[this.commandList.length] = sc;
+	
+	// quantum - Sets the quantum value.
+    sc = new ShellCommand();
+    sc.command = "quantum";
+    sc.description = " <int> - Sets the CPU burst time.";
+    sc.function = shellSetQuantum;
+    this.commandList[this.commandList.length] = sc;
+	
+	// ps - Displays the PIDs of all active process.
+    sc = new ShellCommand();
+    sc.command = "ps";
+    sc.description = " - List the PIDs of all active processes.";
+    sc.function = shellPs;
+    this.commandList[this.commandList.length] = sc;
+	
+	// runall - Schedules all resident processes for execution.
+    sc = new ShellCommand();
+    sc.command = "runall";
+    sc.description = " - Execute all resident processes.";
+    sc.function = shellRunAll;
+    this.commandList[this.commandList.length] = sc;
 
+	// kill - Terminates an active process immediately.
+    sc = new ShellCommand();
+    sc.command = "kill";
+    sc.description = " <pid> - Terminates the specified process.";
+    sc.function = shellKillPs;
+    this.commandList[this.commandList.length] = sc;
+	
 	// BSOD - provide a mechanism for testing the kernel error trap function
 	sc = new ShellCommand();
 	sc.command = "implode";
@@ -129,7 +157,6 @@ function shellInit() {
 	sc.function = shellSetStatus;
 	this.commandList[this.commandList.length] = sc;
 	
-    // processes - list the running processes and their IDs
     // kill <id> - kills the specified process id.
 
     //
@@ -241,6 +268,94 @@ function shellExecute(fn, args)
     this.putPrompt();
 }
 
+/**
+* Schedules all resident processes for execution.
+*/
+function shellRunAll() {
+	for (var pid = 0; pid < MAX_PROCESSES; pid+=1) { // Enumerate all possible process IDs (there can only be three).
+		if (_KernelResidentList.hasOwnProperty(pid)) { // If the PID has an associated process then execute it.
+			executeProcess([pid]);
+		}
+	}
+}
+
+/**
+* Allows the user to modify the quantum value. 
+*/
+function shellSetQuantum(args) {
+	// We only care about the first element of the args array.
+	var number = Number(args[0]);
+	
+	if (typeof number !== 'number' || args < 0) { // Verify that the user entered a number.
+		_StdOut.putText("Invalid quantum value. Must be an integer > 0.");
+	} else { // Set the quantum and inform the user.
+		_Quantum = number;
+		_StdOut.putText("Quantum initialized to " + number);
+	}
+}
+
+/**
+* Displays all currently executing processes.
+*/
+function shellPs() {
+	
+	// Dummy var to hold the final output string.
+	var output = [];
+	
+	// Make sure to include the PID of the currently executing process.
+	if (_ActiveProcess !== undefined && _ActiveProcess !== null) {
+		output[output.length] = "  " + _ActiveProcess.PID + "  " + "  executing";
+	}
+	
+	// Enumerate over all keys on the ready queue. Each key 
+	// represents a PID of a process either in execution or 
+	// awaiting execution by the scheduler.
+	for (var i = 0; i < _KernelReadyQueue.getSize(); i+=1) {
+			output[output.length] = "  " + _KernelReadyQueue.q[i] + "  " + "  waiting/ready";
+	}
+	
+	if (output.length > 0) { // If there are any active processes.
+		// Print the header
+		_StdOut.putText("  PID  STATUS");
+		_StdOut.advanceLine();
+		// Print the active process information.
+		for (var i=0; i < output.length; i+=1) {
+			_StdOut.putText(output[i]);
+			_StdOut.advanceLine();
+		}
+	} else { // If there are no active processes.
+		_StdOut.putText("  There are currently 0 active processes.");
+	}
+}
+
+function shellKillPs(args) {
+
+	var pid = Number(args[0]); // Grab the PID input  by the user.
+	
+	if (isNaN(pid)) { // Verify that the user entered a number.
+		_StdOut.putText("Invalid PID value. Must be an integer.");
+		return;
+	}
+	
+	// Check if the process to kill is currently executing.
+	if (_ActiveProcess !== undefined && _ActiveProcess !== null) {
+		if(_ActiveProcess.PID === pid) { // It is...
+			krnTerminateProcess(_KernelResidentList[pid]); // Terminate it.
+			return;
+		}
+	} else { // Check if the process is on the ready queue. 
+		for (var i = 0; i < _KernelReadyQueue.getSize(); i+=1) { // Enumerate over all processes on the ready queue.
+			if (_KernelReadyQueue.q[i] === pid) { // If this is the specified process.
+				delete _KernelReadyQueue.q[i] // Remove it from the ready queue.
+				krnTerminateProcess(_KernelResidentList[pid]); // Terminate it.
+				break; // Break out of the for loop.
+				return;
+			}
+		}
+	}
+	
+	_StdOut.putText("Cannot kill process with PID " + pid + " because the process does not exist.");
+}
 
 //
 // The rest of these functions ARE NOT part of the Shell "class" (prototype, more accurately),
@@ -490,27 +605,31 @@ function validateSourceCode(tokens) {
 }
 
 /**
- * Loads the source code from the user input area into main memory.
+ * Parses the source code in the user input area and passes it to the kernel. 
+ * The kernel is responsible for loading the code into main memory and creating
+ * a new process representing the program.
  */
 function loadProgram() {
 
     // First check if the user typed in any source code.
     if (_userInputArea.value.length == 0) {
-        _StdOut.putText("Source code not found.");
+        _StdOut.putText("You did not enter any source code. Try again.");
         return;
     }
-    // Ok, so there is source code...lets validate it.
+	
+    // There is some source code...lets validate it.
     var src = _userInputArea.value.trim().split(" ");
     var isValid = validateSourceCode(src);
 
-    // Its valid, do stuff.
+    // The source contains valid syntax, feed it to the kernel
+	// and assume that it is not a virus.
     if (isValid) {
         // create a new process
-        var pid = krnNewProcess();
-        // load the program code into main memory
-        for (var i = 0; i < src.length; i++) {
-            _MemoryManager.write(pid, i, src[i].trim());
-        }
+        var pid = krnNewProcess(src);
+		// Verify that the process was created.
+		if (pid === OUT_OF_MEMORY_ERROR) {
+			return; // Half further processing of the command immediately.
+		}
         // refresh the memory display device
         refreshDisplay();
         // return pid to the console
@@ -522,18 +641,19 @@ function loadProgram() {
     }
 }
 
-function executeProcess(pid) {
-
-    // Get the PCB associated with the specified PID.
-    var toExecute = _KernelPCBList[pid];
-
+/**
+* Executes the process specified by PID. This method 
+* delegates the necessary scheduling work to the kernel.
+*/
+function executeProcess(args) {
+	// Grab the PID from the params list.
+	var toExecutePID = args[0];
     // This check ensures that the specified PID is valid.
-    if (typeof toExecute != 'undefined') {
-        _KernelReadyQueue.enqueue(toExecute);
+    if (typeof _KernelResidentList[toExecutePID] != 'undefined') {
+        krnScheduleProcess(toExecutePID);
     } else {
         _StdOut.putText("Unable to execute process. Invalid PID " + pid);
     }
-
 }
 
 // Causes a catastrophic error resulting in a BSOD.

@@ -28,7 +28,7 @@ function krnMemDispDriverEntry() {
  */
 function initializeDisplay() {
     // The outer for loop is responsible for creating the row and initializing the row label.
-    for (var i=0; i < 255; i += 8) {
+    for (var i=0; i < MEMORY_MAX; i += 8) {
 
         var ithRow = _memoryDisplayDevice.insertRow(-1);
         var label = ithRow.insertCell(-1);

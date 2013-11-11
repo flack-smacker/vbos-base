@@ -26,23 +26,22 @@ function krnBootstrap()      // Page 8.
    _KernelBuffers = new Array();         // Buffers... for the kernel.
    _KernelInputQueue = new Queue();      // Where device input lands before being processed out somewhere.
 
-   // Process related queues.
+   // Process related data structures.
    _KernelReadyQueue = new Queue();
-   _KernelPCBList = new Array();
+   _KernelResidentList = {};
 
-   _Console = new CLIconsole();          // The command line interface / console I/O device.
-
-   // Initialize the CLIconsole.
-   _Console.init();
+   _Console = new CLIconsole();     // The command line interface / console I/O device.
+   _Console.init();                 // Initialize the CLIconsole.
 
    // Initialize standard input and output to the _Console.
    _StdIn  = _Console;
    _StdOut = _Console;
 
    // Load the Keyboard Device Driver
+    //TODO: Should that have a _global-style name?
    krnTrace("Loading the keyboard device driver.");
-   krnKeyboardDriver = new DeviceDriverKeyboard();     // Construct it.  TODO: Should that have a _global-style name?
-   krnKeyboardDriver.driverEntry();                    // Call the driverEntry() initialization routine.
+   krnKeyboardDriver = new DeviceDriverKeyboard();
+   krnKeyboardDriver.driverEntry();
    krnTrace(krnKeyboardDriver.status);
 
    // Load the status bar display.
@@ -61,11 +60,17 @@ function krnBootstrap()      // Page 8.
    krnTrace("Enabling the interrupts.");
    krnEnableInterrupts();
 
+   // Initialize the CPU scheduler with a default quantum of 6;
+   _Scheduler = new RoundRobinScheduler(_Quantum);
+   
    // Launch the shell.
    krnTrace("Creating and Launching the shell.");
    _OsShell = new Shell();
    _OsShell.init();
-
+   
+   // Don't leave the kernel in GOD MODE!
+   _Mode = USER_MODE;
+   
    // Finally, initiate testing.
    if (_GLaDOS) {
       _GLaDOS.afterStartup();
@@ -94,27 +99,14 @@ function krnOnCPUClockPulse()
        This, on the other hand, is the clock pulse from the hardware (or host) that tells the kernel 
        that it has to look for interrupts and process them if it finds any.                           */
 	
-    // Check for an interrupt, are any. Page 560
-    if (_KernelInterruptQueue.getSize() > 0)    
-    {
+    if (_KernelInterruptQueue.getSize() > 0) { // Check for an interrupt, are any. Page 560
         // Process the first interrupt on the interrupt queue.
         // TODO: Implement a priority queue based on the IRQ number/id to enforce interrupt priority.
         var interrupt = _KernelInterruptQueue.dequeue();
         krnInterruptHandler(interrupt.irq, interrupt.params);
-    }
-    else if (_CPU.isExecuting) // If there are no interrupts then run one CPU cycle if there is anything being processed.
-    {
-        _CPU.cycle();
-    }
-    else if (_KernelReadyQueue.getSize() > 0) // If there is no work to execute then check the ready queue for more work.
-    {
-        var toDispatch = _KernelReadyQueue.dequeue();
-        krnDispatchProcess(toDispatch);
-    }
-    else  // If there are no interrupts and there is nothing being executed then just be idle.
-    {
-       krnTrace("Idle");
-    }
+    } else { // Delegate CPU-related tasks to the scheduler.
+		_Scheduler.doExecute();
+	}
 }
 
 
@@ -147,18 +139,24 @@ function krnInterruptHandler(irq, params)    // This is the Interrupt Handler Ro
     switch (irq)
     {
         case TIMER_IRQ: 
-            krnTimerISR();                   // Kernel built-in routine for timers (not the clock).
+            krnTimerISR();	// Kernel built-in routine for timers (not the clock).
             break;
         case KEYBOARD_IRQ: 
-            krnKeyboardDriver.isr(params);   // Kernel mode device driver
+            krnKeyboardDriver.isr(params);	// Kernel mode device driver
             _StdIn.handleInput();
             break;
-        case SYSTEM_CALL_IRQ:
+        case SYSTEM_CALL_IRQ:	// CPU requested a system service.
             krnSystemCallIsr(params);
             break;
-        case PROCESS_COMPLETE_IRQ:
-            krnTerminateProcess(_KernelPCBList[_ActiveProcess]);
+        case PROCESS_COMPLETE_IRQ: // A process requested termination.
+            krnTerminateProcess(_ActiveProcess);
             break;
+		case MEMORY_ERROR_IRQ: // A memory related error occurred.
+			krnMemoryErrorIsr(params);
+			break;
+		case CONTEXT_SWITCH_IRQ:
+			krnCPUContextSwitch(params); // The scheduler requested a context-switch.
+			break;
         default:
             krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");
     }
@@ -167,27 +165,95 @@ function krnInterruptHandler(irq, params)    // This is the Interrupt Handler Ro
 function krnTimerISR()  // The built-in TIMER (not clock) Interrupt Service Routine (as opposed to an ISR coming from a device driver).
 {
     // Check multiprogramming parameters and enforce quanta here. Call the scheduler / context switch here if necessary.
-}   
+}
 
+/**
+* This method is responsbile for performing a CPU context switch. 
+* It is invoked from the kernel interrupt handler routine when the appropriate
+* interrupt code is generated by the CPU scheduler.
+*/
+function krnCPUContextSwitch(params) {
+	// Determine which process is being switched out.
+	var toSavePID = params[0];
+	// Grab the PCB of the outgoing process.
+	var toSavePCB = _KernelResidentList[toSavePID];
+	// Modify the status field appropriately.
+	toSavePCB.State = ProcessState.READY;
+	// Save the state of the CPU to the PCB.
+	toSavePCB.PC = _CPU.PC;
+    toSavePCB.Acc = _CPU.Acc;
+    toSavePCB.Xreg = _CPU.Xreg;
+    toSavePCB.Yreg = _CPU.Yreg;
+    toSavePCB.Zflag = _CPU.Zflag;
+	// Place the switched out process to the back of the ready queue.
+	// Log scheduling events...
+	krnTrace("Switching out process with PID " + toSavePID + " and placing it to the back of the ready queue.");
+	_KernelReadyQueue.enqueue(toSavePID);
+}
+
+function krnMemoryErrorIsr(params) {
+	
+	var errorType = params[0];
+	
+	switch (errorType)
+    {
+        case ACCESS_VIOLATION_ERROR: 
+            _StdOut.putText("Process with PID " + params[1] + " attempted to access a memory location outside its address space.");
+			_StdOut.putText("Terminating process " + params[1]);
+			_StdOut.advanceLine();
+			_OsShell.putPrompt();
+            break;
+        case OUT_OF_MEMORY_ERROR: 
+			_StdOut.putText("Load command failed. Insufficient memory.");
+			_StdOut.advanceLine();
+			_OsShell.putPrompt();
+            break;
+		default:
+			// do nothing
+	}
+}
+
+/**
+ * The routine that is called when an executing program requests a system call. The type of system call is
+ * specified by the first parameter in the params array.
+ *
+ * @param params contains the parameters required by the specified system call
+ */
 function krnSystemCallIsr(params) {
-    if (params[0] == 1)
-    {
-        _StdOut.putText(params[1].toString());
-    }
-    else if (params[0] == 2)
-    {
-        var start = params[1];
-        var offset = 0;
-        var charCode = null;
-
-        do {
-            var charCode = parseInt(_MemoryManager.read(0, start + offset, 0), 16);
-            _StdOut.putText(String.fromCharCode(charCode));
-            offset += 1;
-        } while (charCode != 0);
-
+    if (params[0] == 1) {
+        displayInteger(params[1]);
+    } else if (params[0] == 2) {
+        displayString(params[1]);
     }
 }
+
+/**
+ * Prints the specified integer to standard output.
+ *
+ * @param toPrint an integer
+ */
+function displayInteger(toPrint) {
+    _StdOut.putText(toPrint.toString());
+}
+
+/**
+ * Prints the null-terminated string starting at the specified address to standard output.
+ *
+ * @param startAddress the address of the first character in the string
+ */
+function displayString(startAddress) {
+
+    var offset = 0; // The current offset into the string.
+    var charCode = null; // The current ASCII character located at (startAddress + offset).
+
+    do { // Loop until the null-terminator is encountered.
+        // Retrieve the next character from memory.
+        charCode = parseInt(_MemoryManager.read(startAddress, offset), 16);
+        _StdOut.putText(String.fromCharCode(charCode)); // Print the character to standard output.
+        offset += 1; // Point to the next character in the string.
+    } while (charCode != 0);
+}
+
 //
 // System Calls... that generate software interrupts via tha Application Programming Interface library routines.
 //
@@ -248,7 +314,7 @@ function displayBSOD() {
 	_StdOut.advanceLine();
 	_StdOut.putText("  %ERROR CODE: A0DEAF00 0BABE000");
     _StdOut.advanceLine();
-	_StdOut.putText("TO AVOID ADDITIONAL LOSS OF DATA.")
+	_StdOut.putText("TO AVOID ADDITIONAL LOSS OF DATA.");
     _StdOut.advanceLine();
 	_StdOut.putText("PLEASE CONTACT OUR SUPPORT DEPARTMENT.");
     _StdOut.advanceLine();
@@ -263,78 +329,87 @@ function displayBSOD() {
 
 }
 /**
- * Creates a new process and adds it to the PCB list.
- *
+ * Creates a new process for the specified source program and adds it to the resident list.
+ * When this method returns a new process will have been created and the source code
+ * specified by src will have been loaded into memory.
+ 
  * @returns {ProcCtrlBlk.PID|*}
  */
-function krnNewProcess() {
-
-    // Create the PCB
+function krnNewProcess(src) {
+    
+	// First try to allocate memory for the process...
+    var newPID = _nextPID++; // ...which requires a PID.
+	var baseAddr = _MemoryManager.allocate(newPID);
+	
+	// Check if the allocation was successful or not.
+	if (baseAddr === OUT_OF_MEMORY_ERROR) { // Fail...
+		// Generate an out-of-memory interrupt.
+		_KernelInterruptQueue.enqueue(new Interrupt(MEMORY_ERROR_IRQ, [OUT_OF_MEMORY_ERROR]));
+		// Reset the PID.
+		newPID--;
+		// Inform the shell that the load command failed.
+		return OUT_OF_MEMORY_ERROR;
+	}
+	
+	// The allocation was successful so create the PCB
     var newPCB = new ProcCtrlBlk();
-    // Assign it a PID
-    newPCB.PID = generatePID();
+	
+	// Assign the base and limit addresses and the PID.
+    newPCB.BASE_ADDRESS = baseAddr;
+    newPCB.LIMIT = newPCB.BASE_ADDRESS + (ADDRESS_SPACE_MAX - 1);
+	newPCB.PID = newPID;
+    
     // Add the PCB to the kernels PCB list.
-    _KernelPCBList[newPCB.PID] = newPCB;
-    // Allocate memory for the process.
-    newPCB.BASE_ADDRESS = _MemoryManager.allocate(newPCB.PID);
-    newPCB.LIMIT = newPCB.BASE_ADDRESS + 255;
+    _KernelResidentList[newPCB.PID] = newPCB;
+	
+	// Go ahead and load the source code into main memory...
+	_Mode = KERNEL_MODE;
+        for (var offset = 0; offset < src.length; offset++) {
+            _MemoryManager.write(offset + baseAddr, src[offset].trim());
+        }
+    _Mode = USER_MODE;
+	
     // Return the PID to the caller.
-    return newPCB.PID;
+    return newPID;
 }
 
-function krnDispatchProcess(process) {
-    // Set the program counter to the address of the first instruction.
-    _CPU.PC = process.BASE_ADDRESS;
-    // Inform the kernel that there is work to be done.
-    _CPU.isExecuting = true;
-    // Update the process state.
-    process.State = ProcessState.RUNNING;
-    // Update the currently active process.
-    _ActiveProcess = process.PID;
-    // Update the PCB display
-    updatePCBDisplay();
-
+/**
+* Queues the process specified by PID for execution. This method is
+* responsible for transferring the process to the ready queue where it 
+* will await executing by the CPU scheduler.
+*/
+function krnScheduleProcess(pid) {
+	_KernelReadyQueue.enqueue(pid);
 }
 
 function krnTerminateProcess(process) {
-    process.State = ProcessState.TERMINATED;
-    // Update the PCB display
-    updatePCBDisplay();
-    // Reset the CPU registers.
+	
+    updatePCBDisplay(); // Write the contents of the PCB to the PCB display.
+	process.State = ProcessState.TERMINATED; // Update the process state.
+    
+	_MemoryManager.deallocate(process.PID); // Free the memory allocated to this process.
+	refreshDisplay(); // Refresh Main Memory
+    
+	// Delete the PCB associated with this process.
+    delete _KernelResidentList[process.PID];
+	_nextPID -= 1;
+    _ActiveProcess = null;
+    
+	// Reset the CPU.
     _CPU.init();
-    // Free the memory allocated to this process.
-    _MemoryManager.deallocate(process.PID);
-    // Delete the PCB associated with this process.
-    delete _KernelPCBList[process.PID];
-    // Reset the PID of the active process.
-    _ActiveProcess = -1;
-    // Refresh Main Memory
-    refreshDisplay();
-    _StdOut.advanceLine();
+	_CPU.isExecuting = false;
+    
+	// Reset the console display.
+	_StdOut.advanceLine();
     _StdOut.putText(">");
-
-}
-/**
- * Generates an integer PID within the range of 0 to MAX_PROCESSES
- *
- * @returns {*}
- */
-function generatePID() {
-    var candidate;
-
-    do { // loop until an unused PID is generated
-        candidate = Math.floor(Math.random()*100) % MAX_PROCESSES;
-    } while (typeof _KernelPCBList[candidate] != 'undefined');
-
-    return candidate;
 }
 
 function updatePCBDisplay() {
-    var pcb = _KernelPCBList[_ActiveProcess];
-    var pcbState = "PID: " + pcb.PID + "\n" +
-        "STATE: " + pcb.State + "\n" +
-        "BASE ADDRESS: " + pcb.BASE_ADDRESS + "\n" +
-        "LIMIT: " + pcb.LIMIT + "\n" +
+
+    var pcbState = "PID: " + _ActiveProcess.PID + "\n" +
+        "STATE: " + _ActiveProcess.State + "\n" +
+        "BASE ADDRESS: " + _ActiveProcess.BASE_ADDRESS + "\n" +
+        "LIMIT: " + _ActiveProcess.LIMIT + "\n" +
         "PC: " + _CPU.PC + "\n" +
         "ACC: " + _CPU.Acc + "\n" +
         "X: " + _CPU.Xreg + "\n" +

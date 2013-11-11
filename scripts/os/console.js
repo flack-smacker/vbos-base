@@ -152,6 +152,17 @@ function CLIconsole() {
        // decided to write one function and use the term "text" to connote string or char.
        if (text !== "")
        {
+			/** Code for handling word wrapping **/
+			var offset = _DrawingContext.measureText(this.CurrentFont, this.CurrentFontSize, text); // Calculate the width...
+			// ...of the current output plus the width of the specified text to be drawn.
+			
+			// Check if the total width exceeds the width of the canvas.
+			if ((offset + this.CurrentXPosition) > _Canvas.width) {
+				// Advance the cursor to the next line and draw the text as normal.
+				this.advanceLine();
+			}
+			/** END WORD WRAP CODE **/
+			
            // Draw the text at the current X and Y coordinates.
            _DrawingContext.drawText(this.CurrentFont, this.CurrentFontSize, this.CurrentXPosition, this.CurrentYPosition, text);
            // Move the current X position.

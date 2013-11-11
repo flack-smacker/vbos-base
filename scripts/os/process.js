@@ -22,6 +22,11 @@ function ProcCtrlBlk() {
 
 }
 
+/**
+ * Constants to represent the various process states.
+ *
+ * @type {{NEW: number, RUNNING: number, WAITING: number, READY: number, TERMINATED: number}}
+ */
 ProcessState = {
 
     NEW: 0,

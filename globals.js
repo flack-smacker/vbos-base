@@ -16,9 +16,10 @@ var APP_VERSION = "0.01";
 
 var CPU_CLOCK_INTERVAL = 100;   // This is in ms, or milliseconds, so 1000 = 1 second.
 
-var MEMORY_MAX = 256; // Size of main memory in bytes.
+var MEMORY_MAX = 768; // Size of main memory in bytes.
+var ADDRESS_SPACE_MAX = 256; // Address space size in bytes.
 
-var MAX_PROCESSES = 100 // The maximum number of processes that can exist on the system.
+var MAX_PROCESSES = 3 // The maximum number of processes that can exist on the system.
 var DEFAULT_PRIORITY = 1 // The default priority given to a newly created process.
 
 var TIMER_IRQ = 0;  // Pages 23 (timer), 9 (interrupts), and 561 (interrupt priority).
@@ -26,6 +27,14 @@ var TIMER_IRQ = 0;  // Pages 23 (timer), 9 (interrupts), and 561 (interrupt prio
 var KEYBOARD_IRQ = 1;
 var SYSTEM_CALL_IRQ = 2; // Used by a process to to request a system service.
 var PROCESS_COMPLETE_IRQ = 3; // Used by a process to indicate successful termination.
+var MEMORY_ERROR_IRQ = 4; // The interrupt code used to specify a memory related error.
+var CONTEXT_SWITCH_IRQ = 5; // The interrupt code used by the CPU to specify a context switch.
+
+var ACCESS_VIOLATION_ERROR = -2; // Indicates that a process attempted to access a restricted/invalid memory location.
+var OUT_OF_MEMORY_ERROR = -1; // Indicates a failed allocation attempt by the kernel.
+
+var KERNEL_MODE = 0;
+var USER_MODE = 1;
 
 //
 // Global Variables
@@ -37,7 +46,7 @@ var _MemoryManager = null;
 
 var _OSclock = 0;       // Page 23.
 
-var _Mode = 0;   // 0 = Kernel Mode, 1 = User Mode.  See page 21.
+var _Mode = KERNEL_MODE;   // 0 = Kernel Mode, 1 = User Mode. 
 
 var _Canvas = null;               // Initialized in hostInit().
 var _DrawingContext = null;       // Initialized in hostInit().
@@ -57,10 +66,13 @@ var _KernelInterruptQueue = null;
 var _KernelBuffers = null;
 var _KernelInputQueue = null;
 
-// Process-related queues
+// Process-related data structures
 var _KernelReadyQueue = null;
-var _KernelPCBList = null;
-var _ActiveProcess = -1;
+var _KernelResidentList = null;
+var _ActiveProcess = null;
+var _nextPID = 0;
+var _Quantum = 6;
+var _Scheduler = null;
 
 // Standard input and output
 var _StdIn  = null;

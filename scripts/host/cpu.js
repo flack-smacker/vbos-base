@@ -35,7 +35,7 @@ function Cpu() {
         // TODO: Accumulate CPU usage and profiling statistics here.
 
         // Fetch the next instruction.
-        var opcode = _MemoryManager.read(0, this.PC, 0);
+        var opcode = _MemoryManager.read(this.PC, 0);
 
         // Increment the Program Counter
         this.PC += 1;
@@ -52,7 +52,7 @@ function Cpu() {
     this.instructions = {
 
         'A9': function() { // Load the accumulator with a constant.
-            _CPU.Acc = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 16);
+            _CPU.Acc = parseInt(_MemoryManager.read(_CPU.PC, 0), 16);
             _CPU.PC += 1;
         },
 
@@ -63,46 +63,40 @@ function Cpu() {
         },
 
         '8D': function() { // Write the value of the accumulator to memory.
-            var lowNyble = _MemoryManager.read(0, _CPU.PC, 0);
-            var highNyble = _MemoryManager.read(0, _CPU.PC, 1);
-
+            var lowNyble = _MemoryManager.read(_CPU.PC, 0);
+            var highNyble = _MemoryManager.read(_CPU.PC, 1);
+			_CPU.PC += 2;
+			
             var toAddress = parseInt(highNyble + lowNyble, 16);
-
-            _MemoryManager.write(0, toAddress, _CPU.Acc);
-
-            _CPU.PC += 2;
+            _MemoryManager.write(toAddress, _CPU.Acc);
         },
 
         '6D': function() { // Add the contents of a memory address to the accumulator.
 
             var toAdd = fetchOperand();
-
             _CPU.Acc += toAdd;
-            _CPU.PC += 2;
         },
 
         'A2': function() { // Load X register with a constant.
-            _CPU.Xreg = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 16);
+            _CPU.Xreg = parseInt(_MemoryManager.read(_CPU.PC, 0), 16);
             _CPU.PC += 1;
         },
 
         'AE': function() { // Load X register from memory.
 
             var toLoad = fetchOperand()
-
             _CPU.Xreg = toLoad;
 
         },
 
         'A0': function() { // Load Y register with a constant.
-            _CPU.Yreg = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 16);
+            _CPU.Yreg = parseInt(_MemoryManager.read(_CPU.PC, 0), 16);
             _CPU.PC += 1;
         },
 
         'AC': function() { // Load Y register from memory.
 
             var toLoad = fetchOperand();
-
             _CPU.Yreg = toLoad;
         },
 
@@ -118,38 +112,42 @@ function Cpu() {
 
             var toCompare = fetchOperand();
 
-            if (_CPU.Xreg == toCompare) {
+            if (_CPU.Xreg === toCompare) {
                 _CPU.Zflag = 1;
-            }
+            } else {
+				_CPU.Zflag = 0;
+			}
         },
 
         'D0': function() { // Branch X bytes if Z flag = 0
-
-            if (_CPU.Zflag == 0) {
-                var offset = parseInt(_MemoryManager.read(0, _CPU.PC, 0), 16);
-
-                _CPU.PC = _CPU.PC + offset
-
-                if ( _CPU.PC > 255 ) { // Allows for "negative" branching by wrapping-around.
-                    _CPU.PC = _CPU.PC - 255;
+            
+			// The branch amount is contained in the next byte.
+			var offset = parseInt(_MemoryManager.read(_CPU.PC, 0), 16);
+			_CPU.PC += 1;
+			
+			// Check if we have to branch.
+			if (_CPU.Zflag === 0) {
+				// Move the PC the specified number of bytes from the point immediately after the two-byte BNE command.
+                _CPU.PC += offset
+				// Check if the branch requires a wrap-around.
+                if (_CPU.PC > (ADDRESS_SPACE_MAX - 1)) { // Allows for "negative" branching by wrapping-around.
+                    _CPU.PC = _CPU.PC - ADDRESS_SPACE_MAX;
                 }
-            } else {
-                _CPU.PC += 1;
             }
         },
 
         'EE': function() { // Increment the value of a byte in memory.
 
-            var lowNyble = _MemoryManager.read(0, _CPU.PC, 0);
-            var highNyble = _MemoryManager.read(0, _CPU.PC, 1);
+            var lowNyble = _MemoryManager.read(_CPU.PC, 0);
+            var highNyble = _MemoryManager.read(_CPU.PC, 1);
             _CPU.PC += 2;
 
             var operandAddress = parseInt(highNyble + lowNyble, 16);
-            var operand =  parseInt(_MemoryManager.read(0, operandAddress, 0), 16);
+            var operand =  parseInt(_MemoryManager.read(operandAddress, 0), 16);
 
             operand += 1;
 
-            _MemoryManager.write(0, operandAddress, operand);
+            _MemoryManager.write(operandAddress, operand);
         },
 
         'FF': function() { // Print system call.
@@ -161,14 +159,17 @@ function Cpu() {
         }
     };
 
+	/**
+	 * Fetches a two-byte operand starting from the memory address currently pointed to be the program counter.
+	 */
     function fetchOperand() {
 
-        var lowNyble = _MemoryManager.read(0, _CPU.PC, 0);
-        var highNyble = _MemoryManager.read(0, _CPU.PC, 1);
+        var lowNyble = _MemoryManager.read(_CPU.PC, 0);
+        var highNyble = _MemoryManager.read(_CPU.PC, 1);
         _CPU.PC += 2;
 
         var operandAddress = parseInt(highNyble + lowNyble, 16);
-        var operand =  parseInt(_MemoryManager.read(0, operandAddress, 0), 16);
+        var operand =  parseInt(_MemoryManager.read(operandAddress, 0), 16);
 
         return operand;
     }
