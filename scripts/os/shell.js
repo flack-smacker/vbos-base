@@ -136,6 +136,13 @@ function shellInit() {
     sc.function = shellRunAll;
     this.commandList[this.commandList.length] = sc;
 
+	// kill - Terminates an active process immediately.
+    sc = new ShellCommand();
+    sc.command = "kill";
+    sc.description = " - Terminates the active process specified by PID resident processes.";
+    sc.function = shellKillPs;
+    this.commandList[this.commandList.length] = sc;
+	
 	// BSOD - provide a mechanism for testing the kernel error trap function
 	sc = new ShellCommand();
 	sc.command = "implode";
@@ -265,8 +272,8 @@ function shellExecute(fn, args)
 * Schedules all resident processes for execution.
 */
 function shellRunAll() {
-	for (var pid = 0; pid < 3; pid+=1) {
-		if (_KernelResidentList.hasOwnProperty(pid)) {
+	for (var pid = 0; pid < MAX_PROCESSES; pid+=1) { // Enumerate all possible process IDs (there can only be three).
+		if (_KernelResidentList.hasOwnProperty(pid)) { // If the PID has an associated process then execute it.
 			executeProcess([pid]);
 		}
 	}
@@ -295,18 +302,36 @@ function shellPs() {
 	// Dummy var to hold the final output string.
 	var output = '';
 	
+	// Make sure to include the PID of the currently executing process.
+	if (_ActiveProcess !== undefined && _ActiveProcess !== null) {
+		output += "  " + _ActiveProcess.PID + "  " + " executing\n";
+	}
+	
 	// Enumerate over all keys on the ready queue. Each key 
 	// represents a PID of a process either in execution or 
 	// awaiting execution by the scheduler.
-	for (var pid in _KernelReadyQueue) {
+	for (var pid = 0; pid < MAX_PROCESSES; pid +=1) {
 		if (_KernelReadyQueue.hasOwnProperty(pid)) {
-			_StdOut.putText(' -' + pid);
+			output += "  " + pid + '  ' + " ready\n";
 		}
 	}
 	
-	// Make sure to include the PID of the currently executing process.
-	if (_ActiveProcess !== undefined) {
-		_StdOut.putText(' -' + _ActiveProcess.PID);
+	if (output.length > 0) {
+		_StdOut.putText(output);
+	} else {
+		_StdOut.putText("  There are currently 0 active processes.");
+	}
+}
+
+function shellKillPs(args) {
+	// We only care about the first element of the args array.
+	var number = Number(args[0]);
+	
+	if (typeof number !== 'number' || args < 0) { // Verify that the user entered a number.
+		_StdOut.putText("Invalid PID value. Must be an integer.");
+	} else { // Set the quantum and inform the user.
+		_Quantum = number;
+		_StdOut.putText("Quantum initialized to " + number);
 	}
 }
 
@@ -580,6 +605,10 @@ function loadProgram() {
     if (isValid) {
         // create a new process
         var pid = krnNewProcess(src);
+		// Verify that the process was created.
+		if (pid === OUT_OF_MEMORY_ERROR) {
+			return; // Half further processing of the command immediately.
+		}
         // refresh the memory display device
         refreshDisplay();
         // return pid to the console

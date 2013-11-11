@@ -151,8 +151,8 @@ function krnInterruptHandler(irq, params)    // This is the Interrupt Handler Ro
         case PROCESS_COMPLETE_IRQ: // A process requested termination.
             krnTerminateProcess(_ActiveProcess);
             break;
-		case MEMORY_MANAGER_IRQ: // The memory manager encountered an error.
-			krnMemoryManagerIsr(params);
+		case MEMORY_ERROR_IRQ: // A memory related error occurred.
+			krnMemoryErrorIsr(params);
 			break;
 		case CONTEXT_SWITCH_IRQ:
 			krnCPUContextSwitch(params); // The scheduler requested a context-switch.
@@ -191,8 +191,26 @@ function krnCPUContextSwitch(params) {
 	_KernelReadyQueue.enqueue(toSavePID);
 }
 
-function krnMemoryManagerIsr(params) {
+function krnMemoryErrorIsr(params) {
 	
+	var errorType = params[0];
+	
+	switch (errorType)
+    {
+        case ACCESS_VIOLATION_ERROR: 
+            _StdOut.putText("Process with PID " + params[1] + " attempted to access a memory location outside its address space.");
+			_StdOut.putText("Terminating process " + params[1]);
+			_StdOut.advanceLine();
+			_OsShell.putPrompt();
+            break;
+        case OUT_OF_MEMORY_ERROR: 
+			_StdOut.putText("Load command failed. Insufficient memory.");
+			_StdOut.advanceLine();
+			_OsShell.putPrompt();
+            break;
+		default:
+			// do nothing
+	}
 }
 
 /**
@@ -323,12 +341,22 @@ function krnNewProcess(src) {
     var newPID = _nextPID++; // ...which requires a PID.
 	var baseAddr = _MemoryManager.allocate(newPID);
 	
+	// Check if the allocation was successful or not.
+	if (baseAddr === OUT_OF_MEMORY_ERROR) { // Fail...
+		// Generate an out-of-memory interrupt.
+		_KernelInterruptQueue.enqueue(new Interrupt(MEMORY_ERROR_IRQ, [OUT_OF_MEMORY_ERROR]));
+		// Reset the PID.
+		newPID--;
+		// Inform the shell that the load command failed.
+		return OUT_OF_MEMORY_ERROR;
+	}
+	
 	// The allocation was successful so create the PCB
     var newPCB = new ProcCtrlBlk();
 	
 	// Assign the base and limit addresses and the PID.
     newPCB.BASE_ADDRESS = baseAddr;
-    newPCB.LIMIT = newPCB.BASE_ADDRESS + (PARTITION_SIZE - 1);
+    newPCB.LIMIT = newPCB.BASE_ADDRESS + (ADDRESS_SPACE_MAX - 1);
 	newPCB.PID = newPID;
     
     // Add the PCB to the kernels PCB list.
@@ -355,22 +383,23 @@ function krnScheduleProcess(pid) {
 }
 
 function krnTerminateProcess(process) {
-	// Write the contents of the PCB to the PCB display.
-    updatePCBDisplay();
-    // Update the process state.
-	process.State = ProcessState.TERMINATED;
-    // Free the memory allocated to this process.
-    _MemoryManager.deallocate(process.PID);
-	// Refresh Main Memory
-    refreshDisplay();
-    // Delete the PCB associated with this process.
+	
+    updatePCBDisplay(); // Write the contents of the PCB to the PCB display.
+	process.State = ProcessState.TERMINATED; // Update the process state.
+    
+	_MemoryManager.deallocate(process.PID); // Free the memory allocated to this process.
+	refreshDisplay(); // Refresh Main Memory
+    
+	// Delete the PCB associated with this process.
     delete _KernelResidentList[process.PID];
 	_nextPID -= 1;
     _ActiveProcess = null;
-    // Reset the CPU.
+    
+	// Reset the CPU.
     _CPU.init();
 	_CPU.isExecuting = false;
-    // Reset the console display.
+    
+	// Reset the console display.
 	_StdOut.advanceLine();
     _StdOut.putText(">");
 }

@@ -65,20 +65,16 @@ function Cpu() {
         '8D': function() { // Write the value of the accumulator to memory.
             var lowNyble = _MemoryManager.read(_CPU.PC, 0);
             var highNyble = _MemoryManager.read(_CPU.PC, 1);
-
+			_CPU.PC += 2;
+			
             var toAddress = parseInt(highNyble + lowNyble, 16);
-
             _MemoryManager.write(toAddress, _CPU.Acc);
-
-            _CPU.PC += 2;
         },
 
         '6D': function() { // Add the contents of a memory address to the accumulator.
 
             var toAdd = fetchOperand();
-
             _CPU.Acc += toAdd;
-            _CPU.PC += 2;
         },
 
         'A2': function() { // Load X register with a constant.
@@ -89,7 +85,6 @@ function Cpu() {
         'AE': function() { // Load X register from memory.
 
             var toLoad = fetchOperand()
-
             _CPU.Xreg = toLoad;
 
         },
@@ -102,7 +97,6 @@ function Cpu() {
         'AC': function() { // Load Y register from memory.
 
             var toLoad = fetchOperand();
-
             _CPU.Yreg = toLoad;
         },
 
@@ -118,23 +112,27 @@ function Cpu() {
 
             var toCompare = fetchOperand();
 
-            if (_CPU.Xreg == toCompare) {
+            if (_CPU.Xreg === toCompare) {
                 _CPU.Zflag = 1;
-            }
+            } else {
+				_CPU.Zflag = 0;
+			}
         },
 
         'D0': function() { // Branch X bytes if Z flag = 0
-
-            if (_CPU.Zflag == 0) {
-                var offset = parseInt(_MemoryManager.read(_CPU.PC, 0), 16);
-
-                _CPU.PC = _CPU.PC + offset
-
-                if ( _CPU.PC > 255 ) { // Allows for "negative" branching by wrapping-around.
-                    _CPU.PC = _CPU.PC - 255;
+            
+			// The branch amount is contained in the next byte.
+			var offset = parseInt(_MemoryManager.read(_CPU.PC, 0), 16);
+			_CPU.PC += 1;
+			
+			// Check if we have to branch.
+			if (_CPU.Zflag === 0) {
+				// Move the PC the specified number of bytes from the point immediately after the two-byte BNE command.
+                _CPU.PC += offset
+				// Check if the branch requires a wrap-around.
+                if (_CPU.PC > (ADDRESS_SPACE_MAX - 1)) { // Allows for "negative" branching by wrapping-around.
+                    _CPU.PC = _CPU.PC - ADDRESS_SPACE_MAX;
                 }
-            } else {
-                _CPU.PC += 1;
             }
         },
 

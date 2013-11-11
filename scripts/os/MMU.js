@@ -45,7 +45,7 @@ function MMU(memory) {
 				// Add the baseAddr to the address and perform the write.
 				this.memory.write(baseAddr + address, ("0" + byteVal.toString(16)).substr(-2));
 			} else { // The range check failed.
-				_KernelInterruptQueue.enqueue(new Interrupt(MEMORY_MANAGER_IRQ, [ACCESS_VIOLATION_ERROR, _ActiveProcess.PID]));
+				_KernelInterruptQueue.enqueue(new Interrupt(MEMORY_ERROR_IRQ, [ACCESS_VIOLATION_ERROR, _ActiveProcess.PID]));
 			}
 		}
     };
@@ -71,7 +71,7 @@ function MMU(memory) {
 				// Add the baseAddr to the address and perform the write.
 				return this.memory.readByte(baseAddr + address + offset);
 			} else { // The range check failed.
-				_KernelInterruptQueue.enqueue(new Interrupt(MEMORY_MANAGER_IRQ, [ACCESS_VIOLATION_ERROR, _ActiveProcess.PID]));
+				_KernelInterruptQueue.enqueue(new Interrupt(MEMORY_ERROR_IRQ, [ACCESS_VIOLATION_ERROR, _ActiveProcess.PID]));
 			}
 		}
     };
@@ -93,8 +93,8 @@ function MMU(memory) {
             this.memoryMap[pid] = freeRange;
             // Return the first address of the range.
             return freeRange[0];
-        } else { // If there is no free memory than throw an error.
-            _KernelInterruptQueue.enqueue(new Interrupt(MEMORY_MANAGER_IRQ, [OUT_OF_MEMORY_ERROR, pid]));
+        } else { // If there is no free memory than return an out_of_memory error code.
+			return OUT_OF_MEMORY_ERROR;
         }
     };
 
