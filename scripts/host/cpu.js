@@ -59,7 +59,7 @@ function Cpu() {
         'AD': function() { // Load the accumulator from memory.
 
             var toLoad = fetchOperand();
-            this.Acc = toLoad();
+            _CPU.Acc = toLoad;
         },
 
         '8D': function() { // Write the value of the accumulator to memory.
