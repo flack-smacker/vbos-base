@@ -55,6 +55,12 @@ function krnBootstrap()      // Page 8.
    krnMemDispDriver = new DeviceDriverMemoryDisplay();
    krnMemDispDriver.driverEntry();
    krnTrace(krnMemDispDriver.status);
+   
+   // Load the device driver for the HDD.
+   krnTrace("Loading the HDD device driver.");
+   krnHddDriver = new DeviceDriverHDD();
+   krnHddDriver.driverEntry();
+   krnTrace(krnHddDriver.status);
 
    // Enable the OS Interrupts.  (Not the CPU clock interrupt, as that is done in the hardware sim.)
    krnTrace("Enabling the interrupts.");
@@ -418,4 +424,109 @@ function updatePCBDisplay() {
 
     var taPCBDisplay = document.getElementById("taPCBDisplay");
     taPCBDisplay.value = pcbState;
+}
+
+
+/**
+ * Performs the specified I/O operation. This function delegates the work to the appropriate kernel function.
+ * Its primary purpose is performing checks on the input that are common to every I/O operation. This prevents
+ * unnecessary code duplication and provides a single entry point for all I/O operations. The shell calls this 
+ * function and passes in the appropriate operation constant.
+ */
+function krnPerformIO(operation, filename, data) {
+	
+	// First, check if the file system has been formatted.
+	if (!krnHddDriver.isFormatted) {
+		_StdOut.putText('I/O operation failed. The file system has not been formatted.');
+		_StdOut.putText('Use the \'format\' command or type help for more information.');
+		return;
+	}
+	
+	// Next, make sure the filename is valid.
+	if(!isValid(filename)) {
+		_StdOut.putText('I/O operation failed. Invalid filename.');
+		_StdOut.putText('Filename must be between 3-63 characters and cannot contain: \/*?:;+[]{}<>()\'\"');
+		return;
+	}
+	
+	// Perform the requested I/O operation.
+	switch (operation) {
+		
+		case IO_CREATE_FILE:
+			krnCreateFile(filename);
+			break;
+		case IO_READ_FILE:
+			krnReadFile(filename);
+			break;
+		case IO_WRITE_FILE:
+			krnWriteToFile(filename, data);
+			break;
+		case IO_DELETE_FILE:
+			krnDeleteFile(filename);
+			break;
+		default:
+	}
+}
+
+/**
+ * Creates an entry in the file system for the specified filename. 
+ * Generates an I/O error interrupt if the operation fails. Possible 
+ * reasons for failure are an invalid filename, if the specified filename 
+ * already exists, insufficient storage, or attempting to 
+ * create a file on an unformatted file system.
+ */
+function krnCreateFile(filename) {
+	
+}
+
+/**
+ * Reads the specified file and sends its contents to standard output.
+ * Generates an I/O error interrupt if the operation fails. Possible 
+ * reasons for failure are an invalid filename, or attempting to read a 
+ * file from an unformatted file system.
+ */
+function krnReadFile(filename) {
+	
+}
+
+/**
+ * Writes the specified data to the specified file.
+ * Generates an I/O error interrupt if the operation fails.
+ * Possible reasons that would cause the write to fail are
+ * insufficient storage, an invalid filename, or attempting
+ * to write to an unformatted file system.
+ */
+function krnWriteToFile(filename, data) {
+	
+}
+
+/**
+ * Deletes the specified file from the file system. All data blocks used by the file are marked as free.
+ * Generates an I/O error interrupt if the operation fails. Possible reasons for failure are an invalid
+ * filename, or attempting to delete a file from an unformatted file system.
+ */
+function krnDeleteFile(filename) {
+	
+}
+
+/**
+ * Formats the file system by calling the HDD driver's format routine.
+ */
+function krnFormatFs() {
+	krnHddDriver.format();
+}
+
+/**
+ * Indicates whether the specified filename is valid.
+ */
+function isValid(filename) {
+	
+	// A regex to check for illegal characters in the filename.
+	var illegal = /[\\\/\*?:;+\[\]\{\}<>\(\)'"]+/;
+	
+	// A regex to check if the filename is of the proper length.
+	var valid = /(\w|[!@#$%^&.]){3,63}/i;
+	
+	// Returns true if the filename contains no illegal characters and is of the proper length.
+	return !illegal.test(filename) && valid.test(filename)
 }

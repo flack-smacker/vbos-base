@@ -701,7 +701,7 @@ function shellImplode(args) {
  */
 function shellSetStatus(args) {
 	if (args.length < 1) {
-		_StdIn.putText("Please supply a string.");
+		_StdOut.putText("Please supply a string.");
 	} else {
 		updateStatusMessage(args[0]);
 	}
@@ -712,9 +712,12 @@ function shellSetStatus(args) {
  */
 function createFile(args) {
 	if (args.length < 1) {
-		_StdIn.putText("File create failed. One argument expected, none given.");
-		_StdIn.putText("Please specify a filename.");
+		_StdOut.putText("File create failed. One argument expected, none given.");
+		_StdOut.putText("Please specify a filename.");
+		return;
 	}
+	
+	krnPerformIO(IO_CREATE_FILE, args[0]);
 }
 
 /**
@@ -722,9 +725,12 @@ function createFile(args) {
  */
 function readFile(args) {
 	if (args.length < 1) {
-		_StdIn.putText("File read failed. One argument expected, none given.");
-		_StdIn.putText("Please specify a filename.");
+		_StdOut.putText("File read failed. One argument expected, none given.");
+		_StdOut.putText("Please specify a filename.");
+		return;
 	}
+	
+	krnPerformIO(IO_READ_FILE, args[0]);
 }
 
 /**
@@ -732,9 +738,12 @@ function readFile(args) {
  */
 function writeToFile(args) {
 	if (args.length < 2) {
-		_StdIn.putText("File write failed. Two arguments expected, " + args.length + " given.");
-		_StdIn.putText("Please specify the filename and the data to be written.");
+		_StdOut.putText("File write failed. Two arguments expected, " + args.length + " given.");
+		_StdOut.putText("Please specify the filename and the data to be written.");
+		return;
 	}
+	
+	krnPerformIO(IO_WRITE_FILE, args[0], args[1]);
 }
 
 /**
@@ -742,14 +751,18 @@ function writeToFile(args) {
  */
 function deleteFile(args) {
 	if (args.length < 1) {
-		_StdIn.putText("File delete failed. One argument expected, none given.");
-		_StdIn.putText("Please specify the name of the file to be deleted.");
+		_StdOut.putText("File delete failed. One argument expected, none given.");
+		_StdOut.putText("Please specify the name of the file to be deleted.");
+		return;
 	}
+	
+	krnPerformIO(IO_DELETE_FILE, args[0]);
 }
 
 /**
  * Initialize all blocks in all sectors in all tracks and display a message denoting success or failure.
  */
 function formatFs(args) {
-
+	krnFormatFs()
+	_StdOut.putText("File system format was successful.");
 }
