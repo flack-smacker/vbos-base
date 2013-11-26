@@ -90,13 +90,16 @@ function hostBtnStartOS_click(btn)
     // .. set focus on the OS console display ...
     document.getElementById("display").focus();
 
-    // ... Create and initialize the CPU ...
+    // ... create and initialize the CPU ...
     _CPU = new Cpu();
     _CPU.init();
 
-    // ... Create and initialize main memory ...
+    // ... create and initialize main memory ...
     _MainMemory = new MainMemory(MEMORY_MAX);
     _MainMemory.clear(0, MEMORY_MAX);
+	
+	// ... mount the HDD  ...
+	_HDD = mountHDD();
 
     // ... then set the host clock pulse ...
     _hardwareClockID = setInterval(hostClockPulse, CPU_CLOCK_INTERVAL);
@@ -123,4 +126,24 @@ function hostBtnReset_click(btn)
     // That boolean parameter is the 'forceget' flag. When it is true it causes the page to always
     // be reloaded from the server. If it is false or not specified, the browser may reload the
     // page from its cache, which is not what we want.
+}
+
+/**
+ * Mounts the hard-disk drive .
+ */
+function mountHDD() {
+	if (is_html5_storage_supported()) {
+		return window.localStorage;
+	} else {
+		alert("Unable to mount hard-disk drive.\n HTML5 local storage is not supported on this browser.");
+		return null;
+	}
+}
+
+function is_html5_storage_supported() {
+  try {
+    return 'localStorage' in window && window['localStorage'] !== null;
+  } catch (e) {
+    return false;
+  }
 }

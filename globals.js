@@ -41,8 +41,12 @@ var USER_MODE = 1;
 var _CPU = null;
 
 var _MainMemory = null;
+
 var _MemoryManager = null;
+
 var _OSclock = 0;
+
+var _HDD = null; // HARD DISK DRIVE
 
 var _Mode = KERNEL_MODE;   // 0 = Kernel Mode, 1 = User Mode. 
 
