@@ -83,70 +83,70 @@ function shellInit() {
 	// date - displays the current date and time
 	sc = new ShellCommand();
 	sc.command = "date";
-	sc.description = " - Displays the current date and time";
+	sc.description = "- Displays the current date and time";
 	sc.function = shellTime;
 	this.commandList[this.commandList.length] = sc;
 
 	// whereami - displays the user's current location
 	sc = new ShellCommand();
 	sc.command = "whereami";
-	sc.description = " - Displays the user's current location.";
+	sc.description = "- Displays the user's current location.";
 	sc.function = shellUserLocation;
 	this.commandList[this.commandList.length] = sc;
 
 	// theme - allows the user to change the color of the console elements
 	sc = new ShellCommand();
 	sc.command = "theme";
-	sc.description = " - Sets the console theme.";
+	sc.description = "- Sets the console theme.";
 	sc.function = shellChangeTheme;
 	this.commandList[this.commandList.length] = sc;
 
 	// load - Loads the source code from the input area into main memory.
 	sc = new ShellCommand();
 	sc.command = "load";
-	sc.description = " - Loads a user program into main memory.";
+	sc.description = "- Loads a user program into main memory.";
 	sc.function = loadProgram;
 	this.commandList[this.commandList.length] = sc;
 
     // run - Executes the process with the specified PID.
     sc = new ShellCommand();
     sc.command = "run";
-    sc.description = " - Executes a user program that exists in memory.";
+    sc.description = "- Executes a user program that exists in memory.";
     sc.function = executeProcess;
     this.commandList[this.commandList.length] = sc;
 	
 	// quantum - Sets the quantum value.
     sc = new ShellCommand();
     sc.command = "quantum";
-    sc.description = " <int> - Sets the CPU burst time.";
+    sc.description = "<int> - Sets the CPU burst time.";
     sc.function = shellSetQuantum;
     this.commandList[this.commandList.length] = sc;
 	
 	// ps - Displays the PIDs of all active process.
     sc = new ShellCommand();
     sc.command = "ps";
-    sc.description = " - List the PIDs of all active processes.";
+    sc.description = "- List the PIDs of all active processes.";
     sc.function = shellPs;
     this.commandList[this.commandList.length] = sc;
 	
 	// runall - Schedules all resident processes for execution.
     sc = new ShellCommand();
     sc.command = "runall";
-    sc.description = " - Execute all resident processes.";
+    sc.description = "- Execute all resident processes.";
     sc.function = shellRunAll;
     this.commandList[this.commandList.length] = sc;
 
 	// kill - Terminates an active process immediately.
     sc = new ShellCommand();
     sc.command = "kill";
-    sc.description = " <pid> - Terminates the specified process.";
+    sc.description = "<pid> - Terminates the specified process.";
     sc.function = shellKillPs;
     this.commandList[this.commandList.length] = sc;
 	
 	// BSOD - provide a mechanism for testing the kernel error trap function
 	sc = new ShellCommand();
 	sc.command = "implode";
-	sc.description = " - Causes a catastrophic unrecoverable error.";
+	sc.description = "- Causes a catastrophic unrecoverable error.";
 	sc.function = shellImplode;
 	this.commandList[this.commandList.length] = sc;
 	
@@ -157,9 +157,41 @@ function shellInit() {
 	sc.function = shellSetStatus;
 	this.commandList[this.commandList.length] = sc;
 	
-    // kill <id> - kills the specified process id.
-
-    //
+	// create - Allows the user to create a file.
+    sc = new ShellCommand();
+    sc.command = "create";
+    sc.description = "<filename> - Creates an empty file.";
+    sc.function = createFile;
+    this.commandList[this.commandList.length] = sc;
+	
+	// read - Allows the user to read a file from the file system.
+    sc = new ShellCommand();
+    sc.command = "read";
+    sc.description = "<filename> - Reads the specified file.";
+    sc.function = readFile;
+    this.commandList[this.commandList.length] = sc;
+	
+	// write - Allows the user to write to an existing file.";
+    sc = new ShellCommand();
+    sc.command = "write";
+    sc.description = "<filename> \"data\" - Writes data to an existing file.";
+    sc.function = writeToFile;
+    this.commandList[this.commandList.length] = sc;
+	
+	// delete - Allows the user to delete a file from the file system.
+    sc = new ShellCommand();
+    sc.command = "delete";
+    sc.description = "<filename> - Deletes the specified file.";
+    sc.function = deleteFile;
+    this.commandList[this.commandList.length] = sc;
+	
+	// format - Allows the user to format the file system.
+    sc = new ShellCommand();
+    sc.command = "format";
+    sc.description = "- Initializes the file system.";
+    sc.function = formatFs;
+    this.commandList[this.commandList.length] = sc;
+    
     // Display the initial prompt.
     this.putPrompt();
 }
@@ -643,9 +675,9 @@ function loadProgram() {
 }
 
 /**
-* Executes the process specified by PID. This method 
-* delegates the necessary scheduling work to the kernel.
-*/
+ * Executes the process specified by PID. This method 
+ * delegates the necessary scheduling work to the kernel.
+ */
 function executeProcess(args) {
 	// Grab the PID from the params list.
 	var toExecutePID = args[0];
@@ -657,16 +689,67 @@ function executeProcess(args) {
     }
 }
 
-// Causes a catastrophic error resulting in a BSOD.
+/**
+ * Causes a catastrophic error resulting in a BSOD.
+ */
 function shellImplode(args) {
 	krnTrapError(args[0]);
 }
 
-// Updates the status bar with a custom status message.
+/**
+ * Updates the status bar with a custom status message.
+ */
 function shellSetStatus(args) {
 	if (args.length < 1) {
 		_StdIn.putText("Please supply a string.");
 	} else {
 		updateStatusMessage(args[0]);
 	}
+}
+
+/**
+ * Create the file "filename" and display a message denoting success or failure.	
+ */
+function createFile(args) {
+	if (args.length < 1) {
+		_StdIn.putText("File create failed. One argument expected, none given.");
+		_StdIn.putText("Please specify a filename.");
+	}
+}
+
+/**
+ * Read and display the contents of "filename" or display an error if something went wrong.
+ */
+function readFile(args) {
+	if (args.length < 1) {
+		_StdIn.putText("File read failed. One argument expected, none given.");
+		_StdIn.putText("Please specify a filename.");
+	}
+}
+
+/**
+ * Write the data inside the quotes to "filename" and display a message denoting success or failure.
+ */
+function writeToFile(args) {
+	if (args.length < 2) {
+		_StdIn.putText("File write failed. Two arguments expected, " + args.length + " given.");
+		_StdIn.putText("Please specify the filename and the data to be written.");
+	}
+}
+
+/**
+ * Remove "filename" from storage and display a message denoting success or failure.
+ */
+function deleteFile(args) {
+	if (args.length < 1) {
+		_StdIn.putText("File delete failed. One argument expected, none given.");
+		_StdIn.putText("Please specify the name of the file to be deleted.");
+	}
+}
+
+/**
+ * Initialize all blocks in all sectors in all tracks and display a message denoting success or failure.
+ */
+function formatFs(args) {
+
 }
