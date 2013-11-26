@@ -104,48 +104,66 @@
             </label>
         </div>
 
-        <div id="divUserProgramInput">
-            <label>
-                User Program Input
-                <br>
-                <textarea name="taProgramInput"
-                          id  ="taProgramInput"
-                          rows="8"
-                          cols="60"
-                        ></textarea>
-            </label>
-        </div>
-
-        <div id="cpuDisplay">
-
+        <div id="cpuDisplay" style="width:175px; float:left;">
             <label>
                 CPU Display
                 <br>
                 <textarea name="taCpuDisplay"
                           id  ="taCpuDisplay"
                           rows="6"
-                          cols="15"
+                          cols="18"
                         ></textarea>
             </label>
-
-            <div id="memoryDisplay" style="width:275px; height:255px; overflow: auto; float:right;">
-                <label>
-                    <table id="memoryTable">
-                    </table>
-                </label>
-            </div>
-
-            <label style="float:left;">
-                PCB Display
+		</div>
+		
+		<div id="divPCB" style="width:50%; float:left;">
+			<label>
+				Ready Queue
+              <br>
+				<textarea	name="taPCBDisplay"
+							id="taPCBDisplay"
+							rows="6"
+							cols="30"
+						></textarea>
+			</label>
+		</div>
+        
+		<div id="divUserProgramInput" style="width:150px; clear:left;">
+            <label>
+                Program Input
                 <br>
-                <textarea name="taPCBDisplay"
-                          id  ="taPCBDisplay"
+                <textarea name="taProgramInput"
+                          id  ="taProgramInput"
                           rows="6"
-                          cols="15"
+                          cols="18"
                         ></textarea>
             </label>
         </div>
+		
+		
+		<div id="memTabs"> 
+			<h1>Tabs</h1>
+			<ul>
+				<li><a href="#" onclick="showPartition(1)">Partition 1</a></li>
+				<li><a href="#" onclick="showPartition(2)">Partition 2</a></li>
+				<li><a href="#" onclick="showPartition(3)">Partition 3</a></li>
+			</ul>
+		</div>
+		
+		<div id="memoryDisplay" style="width:275px; height:255px; overflow:auto; clear:left; margin-top:50px;">
+                  
+				  <table id="partition1">
+                  </table>
+				  
+				  <table id="partition2">
+                  </table>
+				  
+				  <table id="partition3">
+                  </table>
+        </div>
+		
     </div>
+    
     <div id="footer" style="clear:both; position:relative; top:40px">
         <p class="footerText">
             <br>

@@ -37,7 +37,7 @@ function hostInit()
 	_userInputArea = document.getElementById("taProgramInput");
 
     // Get a global reference to the memory display device.
-    _memoryDisplayDevice = document.getElementById("memoryTable");
+    _memoryDisplayDevice = document.getElementById("memoryDisplay");
 
 	// Clear the log text box.
 	document.getElementById("taLog").value="";
@@ -100,7 +100,8 @@ function hostBtnStartOS_click(btn)
 
     // ... then set the host clock pulse ...
     _hardwareClockID = setInterval(hostClockPulse, CPU_CLOCK_INTERVAL);
-    // .. and call the OS Kernel Bootstrap routine.
+    
+	// .. and call the OS Kernel Bootstrap routine.
     krnBootstrap();
 }
 

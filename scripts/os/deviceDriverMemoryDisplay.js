@@ -27,20 +27,29 @@ function krnMemDispDriverEntry() {
  * Initializes the memory display by writing out the row labels and setting each row to the default value of "00".
  */
 function initializeDisplay() {
-    // The outer for loop is responsible for creating the row and initializing the row label.
-    for (var i=0; i < MEMORY_MAX; i += 8) {
 
-        var ithRow = _memoryDisplayDevice.insertRow(-1);
-        var label = ithRow.insertCell(-1);
-
-        label.innerHTML = "0x" + ("0" + i.toString(16).toUpperCase()).substr(-2);
-        label.style.fontWeight = "900";
-        //The inner for loop initializes each cell in the row to "00".
-        for (var j=0; j < 8; j++) {
-            var dataCell = ithRow.insertCell(-1);
-            dataCell.innerHTML = "00";
-        }
-    }
+	var partitions = _memoryDisplayDevice.getElementsByTagName('table');
+	
+	for (var i=0; i < partitions.length; i+=1) {
+		
+		// The outer for loop is responsible for creating the row and initializing the row label.
+		for (var j=0; j < ADDRESS_SPACE_MAX; j += 8) {
+			
+			// Insert a new row into the table.
+			var jthRow = partitions[i].insertRow(-1);
+			
+			// Initialize the first cell in the row with a label.
+			var label = jthRow.insertCell(-1);
+			label.innerHTML = "0x" + ("0" + j.toString(16).toUpperCase()).substr(-2); // Pads each label.
+			label.style.fontWeight = "900"; // Differentiates the label cells from the data cells.
+			
+			//The inner for loop initializes each cell in the row to "00".
+			for (var k=0; k < 8; k++) {
+				var dataCell = jthRow.insertCell(-1);
+				dataCell.innerHTML = "00";
+			}
+		}
+	}
 }
 
 
