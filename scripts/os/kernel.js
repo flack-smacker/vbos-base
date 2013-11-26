@@ -58,7 +58,7 @@ function krnBootstrap()      // Page 8.
    
    // Load the device driver for the HDD.
    krnTrace("Loading the HDD device driver.");
-   krnHddDriver = new DeviceDriverHDD();
+   krnHddDriver = new DeviceDriverHDD(_HDD);
    krnHddDriver.driverEntry();
    krnTrace(krnHddDriver.status);
 
