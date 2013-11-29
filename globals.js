@@ -53,7 +53,6 @@ var USER_MODE = 1;
 var _CPU = null; // CPU
 var _OSclock = 0; // CLOCK COUNTER
 var _MainMemory = null; // RAM
-var _HDD = null; // HARD-DISK-DRIVE
 var _statusBar = null; // STATUS BAR
 var _memoryDisplayDevice = null; // MEMORY DISPLAY
 var _userInputArea = null; // PROGRAM INPUT AREA
@@ -63,10 +62,10 @@ var _DefaultFontFamily = "sans";
 var _DefaultFontSize = 13;
 var _FontHeightMargin = 4; // Additional space added to font size when advancing a line.
 
-
 /* Software */
 var _Mode = KERNEL_MODE;   // 0 = Kernel Mode, 1 = User Mode. 
 var _MemoryManager = null; // kernel-level memory manager
+var _FileSystem = null;
 
 // Global Device Driver Handles
 var krnKeyboardDriver = null;

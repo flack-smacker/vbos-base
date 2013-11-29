@@ -58,9 +58,12 @@ function krnBootstrap()      // Page 8.
    
    // Load the device driver for the HDD.
    krnTrace("Loading the HDD device driver.");
-   krnHddDriver = new DeviceDriverHDD(_HDD);
+   krnHddDriver = new DeviceDriverHDD();
    krnHddDriver.driverEntry();
    krnTrace(krnHddDriver.status);
+   
+   // Load and initialize the file system.
+	_FileSystem = new FileSystem();
 
    // Enable the OS Interrupts.  (Not the CPU clock interrupt, as that is done in the hardware sim.)
    krnTrace("Enabling the interrupts.");
@@ -477,7 +480,7 @@ function krnPerformIO(operation, filename, data) {
  */
 function krnCreateFile(filename) {
 	
-	var result = krnHddDriver.create(filename);
+	var result = _FileSystem.create(filename);
 	
 	if (result) {
 		_StdOut.putText("File \'" + filename + "\' created successfuly.");
@@ -521,7 +524,7 @@ function krnDeleteFile(filename) {
  * Formats the file system by calling the HDD driver's format routine.
  */
 function krnFormatFs() {
-	krnHddDriver.format();
+	_FileSystem.format();
 }
 
 /**
