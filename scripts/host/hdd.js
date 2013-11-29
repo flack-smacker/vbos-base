@@ -25,19 +25,20 @@ function HDD() {
 	}
 	
 	/**
-	 * Returns 60-bytes of data located at the specifed <track, sector, block>.
+	 * Returns 64-bytes of data located at the specifed <track, sector, block>.
 	 */
 	this.read = function(track, sector, block) {
-		return this.storage[track+sector+block].substr(4, this.BLK_SZ_BYTES);
+		var location = track + sector + block;
+		return this.storage[location].substr(0, this.BLK_SZ_BYTES);
 	};
 	
 	/**
-	 * Writes 60-bytes of data to the specified <track, sector, block>.
+	 * Writes the specified data to the specified <track, sector, block>.
 	 */
-	this.write = function(track, sector, block, nbytes, data) {
-		this.storage[track+sector+block] = this.storage[track+sector+block].substring(0,4) + data.substr(0, this.BLK_SZ_BYTES - 4); 
+	this.write = function(track, sector, block, data) {
+		var location = track + sector + block;
+		this.storage[location] = data.substr(0, this.BLK_SZ_BYTES);
 	};
-	
 	
 	/**
 	 * Clears all formatting and user data from this drive.

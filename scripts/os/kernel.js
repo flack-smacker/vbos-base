@@ -445,7 +445,7 @@ function krnPerformIO(operation, filename, data) {
 	// Next, make sure the filename is valid.
 	if(!isValid(filename)) {
 		_StdOut.putText('I/O operation failed. Invalid filename.');
-		_StdOut.putText('Filename must be between 3-63 characters and cannot contain: \/*?:;+[]{}<>()\'\"');
+		_StdOut.putText('Filename can be up to 60 characters in length and cannot contain the following characters: \/*?:;+[]{}<>()\'\"');
 		return;
 	}
 	
@@ -477,6 +477,14 @@ function krnPerformIO(operation, filename, data) {
  */
 function krnCreateFile(filename) {
 	
+	var result = krnHddDriver.create(filename);
+	
+	if (result) {
+		_StdOut.putText("File \'" + filename + "\' created successfuly.");
+	} else {
+		_StdOut.putText("Could not create file \'" + filename + "\'.");
+		_StdOut.putText("No free directory entries. Try freeing up space by deleting unused files.");
+	}
 }
 
 /**
@@ -525,7 +533,7 @@ function isValid(filename) {
 	var illegal = /[\\\/\*?:;+\[\]\{\}<>\(\)'"]+/;
 	
 	// A regex to check if the filename is of the proper length.
-	var valid = /(\w|[!@#$%^&.]){3,63}/i;
+	var valid = /(\w|[!@#$%^&.]){1,60}/i;
 	
 	// Returns true if the filename contains no illegal characters and is of the proper length.
 	return !illegal.test(filename) && valid.test(filename)
