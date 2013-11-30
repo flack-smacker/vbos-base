@@ -14,7 +14,7 @@ function DeviceDriverHDD() {
 	this.N_TRACKS = 4; // The number of physical tracks.
 	this.N_SECTORS = 8; // The number of sectors per track.
 	this.N_BLOCKS = 8; // The number of blocks per sector.
-	this.BLK_SZ_BYTES = 64; // // The number of bytes per block.
+	this.BYTES_PER_BLOCK = 64; // // The number of bytes per block.
 	
 	/**
 	 * Initialization routine called by the kernel-bootstrap routine.
@@ -38,7 +38,7 @@ function DeviceDriverHDD() {
 	 */
 	this.read = function(track, sector, block) {
 		var location = track + sector + block;
-		return this.drive[location].substr(0, this.BLK_SZ_BYTES);
+		return this.drive[location].substr(0, this.BYTES_PER_BLOCK);
 	};
 	
 	/**
@@ -46,7 +46,7 @@ function DeviceDriverHDD() {
 	 */
 	this.write = function(track, sector, block, data) {
 		var location = track + sector + block;
-		this.drive[location] = data.substr(0, this.BLK_SZ_BYTES);
+		this.drive[location] = data.substr(0, this.BYTES_PER_BLOCK);
 	};
 	
 	/**

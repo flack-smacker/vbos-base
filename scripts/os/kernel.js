@@ -494,10 +494,15 @@ function krnCreateFile(filename) {
 function krnReadFile(filename) {
 	var result = _FileSystem.read(filename);
 	
-	if (result) {
-		_StdOut.putText(result);
-	} else {
-		_StdOut.putText("Could not read '" + filename + "'. The file does not exist.");
+	if (typeof result === 'string') {
+		if (result.length !== 0) {
+			_StdOut.putText(result);
+		} else {
+			_StdOut.putText("This file contains no data.");
+			_StdOut.putText("Use the \'write\' command to write to the file.");
+		}
+	} else if (!result) {
+		_StdOut.putText("Could not read the specified file because it does not exist.");
 	}
 }
 
@@ -509,7 +514,7 @@ function krnReadFile(filename) {
  * to write to an unformatted file system.
  */
 function krnWriteToFile(filename, data) {
-	
+	_FileSystem.write(filename, data);
 }
 
 /**

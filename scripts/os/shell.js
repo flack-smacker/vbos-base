@@ -743,7 +743,13 @@ function writeToFile(args) {
 		return;
 	}
 	
-	krnPerformIO(IO_WRITE_FILE, args[0], args[1]);
+	var dataString = '';
+	
+	for (var i=1; i < args.length; i+=1) {
+		dataString += args[i] + " ";
+	}
+	
+	krnPerformIO(IO_WRITE_FILE, args[0], dataString.trim());
 }
 
 /**
