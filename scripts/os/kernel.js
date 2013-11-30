@@ -439,7 +439,7 @@ function updatePCBDisplay() {
 function krnPerformIO(operation, filename, data) {
 	
 	// First, check if the file system has been formatted.
-	if (!krnHddDriver.isFormatted) {
+	if (!_FileSystem.isFormatted) {
 		_StdOut.putText('I/O operation failed. The file system has not been formatted.');
 		_StdOut.putText('Use the \'format\' command or type help for more information.');
 		return;
@@ -451,6 +451,9 @@ function krnPerformIO(operation, filename, data) {
 		_StdOut.putText('Filename can be up to 60 characters in length and cannot contain the following characters: \/*?:;+[]{}<>()\'\"');
 		return;
 	}
+	
+	// All file names are upper case.
+	filename = filename.toUpperCase();
 	
 	// Perform the requested I/O operation.
 	switch (operation) {
@@ -479,15 +482,7 @@ function krnPerformIO(operation, filename, data) {
  * create a file on an unformatted file system.
  */
 function krnCreateFile(filename) {
-	
-	var result = _FileSystem.create(filename);
-	
-	if (result) {
-		_StdOut.putText("File \'" + filename + "\' created successfuly.");
-	} else {
-		_StdOut.putText("Could not create file \'" + filename + "\'.");
-		_StdOut.putText("No free directory entries. Try freeing up space by deleting unused files.");
-	}
+	_FileSystem.create(filename);
 }
 
 /**
@@ -497,7 +492,13 @@ function krnCreateFile(filename) {
  * file from an unformatted file system.
  */
 function krnReadFile(filename) {
+	var result = _FileSystem.read(filename);
 	
+	if (result) {
+		_StdOut.putText(result);
+	} else {
+		_StdOut.putText("Could not read '" + filename + "'. The file does not exist.");
+	}
 }
 
 /**
@@ -517,7 +518,7 @@ function krnWriteToFile(filename, data) {
  * filename, or attempting to delete a file from an unformatted file system.
  */
 function krnDeleteFile(filename) {
-	
+	_FileSystem.deleteFile(filename);
 }
 
 /**
