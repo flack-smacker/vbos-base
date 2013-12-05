@@ -39,7 +39,7 @@
 
     <!-- Other Routines -->
     <script type="text/javascript" src="scripts/utils.js"></script>
-    <!--<script type="text/javascript" src="http://www.labouseur.com/courses/os/projects/glados.js"></script>-->
+    <!--<script type="text/javascript" src="http://www.labouseur.com/courses/os/projects/glados.js"></script>--!>
 </head>
 
 <body onload="hostInit();">
@@ -76,7 +76,7 @@
         </div>
 
         <div id="divConsole" style="margin:4px; width:500px; height:500px; float:left">
-            <canvas id="display"
+            <canvas id="consoleDisplay"
                     width="500px"
                     height="500px"
                     tabindex="3">
@@ -128,8 +128,24 @@
 							cols="30"
 						></textarea>
 			</label>
-		</div>
-        
+		</div> 
+		
+		
+		<div id="memoryDisplay">      
+			<a href="#" onclick="showPartition(event, 0)">0-255</a></li>
+			<a href="#" onclick="showPartition(event, 1)">256-511</a></li>
+			<a href="#" onclick="showPartition(event, 2)">512-767</a></li>
+			
+			<table id="partition0">
+            </table>
+				  
+			<table id="partition1">
+            </table>
+				  
+			<table id="partition2">
+            </table>
+        </div>
+		
 		<div id="divUserProgramInput" style="width:150px; clear:left;">
             <label>
                 Program Input
@@ -140,27 +156,6 @@
                           cols="18"
                         ></textarea>
             </label>
-        </div>
-		
-		
-		<div id="memTabs"> 
-			<ul>
-				<li><a href="#" onclick="showPartition(1)">Partition 1</a></li>
-				<li><a href="#" onclick="showPartition(2)">Partition 2</a></li>
-				<li><a href="#" onclick="showPartition(3)">Partition 3</a></li>
-			</ul>
-		</div>
-		
-		<div id="memoryDisplay" style="width:275px; height:255px; overflow:auto; clear:left; margin-top:50px;">
-                  
-				  <table id="partition1">
-                  </table>
-				  
-				  <table id="partition2">
-                  </table>
-				  
-				  <table id="partition3">
-                  </table>
         </div>
 		
     </div>

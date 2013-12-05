@@ -33,6 +33,15 @@ function Queue()
         }
         return retVal;        
     };
+	
+	// Returns the last element in this queue.
+	this.pollLast = function() {
+		var retVal = null;
+        if (this.q.length > 0) {
+			retVal = this.q.pop();
+		}
+        return retVal;
+	}
     
     this.toString = function() {
         var retVal = "";

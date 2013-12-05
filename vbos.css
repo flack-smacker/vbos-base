@@ -29,7 +29,7 @@ h3 {
     font-style: normal;
 }
 
-#display {
+#consoleDisplay {
     background-color:#DFDBC3;
     border: 2px solid red;
     cursor: default;
@@ -40,32 +40,30 @@ h3 {
     border: 2px solid red;
 }
 
-#memoryDisplay ul {
-	list-style: none;
-	padding:0;
-	margin:0;
-}
-
-
-#memoryDisplay li {
-	display: inline;
-	border: solid;
-	border-width: 1px 1px 0 1px;
-	margin: 0 0.5em 0 0;
-}
-
-
-#memoryDisplay li a {
-	padding: 0 1em;
-}
-
 #memoryDisplay {
-    border: 1px solid black;
-    background-color: white;
+	width:275px; 
+	height:255px; 
+	overflow:auto;
+	border: 1px solid black;
 }
 
-#memoryTable {
+#memoryDisplay a {
+	padding:1px;
+	text-decoration:none;
+	padding:4px;
+	text-decoration:none;
+}
 
+#tabs a:hover, a:active {
+	background-color:black;
+}
+
+#partition2 {
+	display:none;
+}
+
+#partition3 {
+	display:none;
 }
 
 .normal_button {

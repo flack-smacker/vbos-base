@@ -10,7 +10,6 @@ function FileSystem() {
 	this.isFormatted = false; // Indicates whether the drive has been formatted.
 	this.usedBlocks = 0; // Tracks the number of data blocks currently holding user data.
 	this.nFiles = 0; // Tracks the number of files stored by this file system.
-	this.usedBlocks = 0; // Tracks the number of data blocks currenty in use by the file system.
 	this.fileIndex = {}; // Maps filenames to directory track addresses.
 	this.freeList = new Queue(); // Contains addresses of free data blocks.
 	
@@ -25,6 +24,8 @@ function FileSystem() {
 	this.DIRECTORY_TRACK = '0'; // The track containing the file metadata.
 	this.BLOCK_STATUS_BYTE = '0' // The index where the status byte is located.
 	this.BYTES_PER_BLOCK = 60; // The amount of bytes available per block for storing user data.
+	this.SWAP_FILE_BEGIN = '100'; // The location of the first block dedicated to the 300-byte swap file.
+	this.SWAP_FILE_END = '104'; // The location of the last block dedicated to the swap file.
 	
 	// The number of blocks available to the user for storing data.
 	// The first track is used to store file system meta-data.
@@ -60,6 +61,9 @@ function FileSystem() {
 		
 		// Intialize the MBR with the address of the first free directory entry.
 		krnHddDriver.write('0', '0', '0', this.USED + '001' + 'VBOS-FS-V1');
+		
+		// Create the swap file.
+		this.initSwapfile(_SwapFile);
 		
 		// Indicate a formatted file system.
 		this.isFormatted = true;
@@ -243,6 +247,58 @@ function FileSystem() {
 		
 		// Indicate success.
 		_StdOut.putText("File '" + filename + "' deleted. ");
+	}
+	
+	this.initSwapfile = function(filename) {
+	
+		// Create a directory entry for the swap file.
+		var entry = this.USED + this.SWAP_FILE_BEGIN + filename + this.NULL_TERMINATOR;
+		krnHddDriver.write('0', '7', '7', entry);
+		
+		// Add this entry to the file index to speed-up access times.
+		this.fileIndex[filename] = '077';
+		
+		// Allocate five blocks for the swap file.
+		var data_blocks = [];
+		for (var i=0; i < 5; i+=1) {
+			data_blocks[i] = this.freeList.dequeue();
+		}
+		krnHddDriver.write('1', '0', '0', this.USED + '101' + this.NULL_TERMINATOR);
+		krnHddDriver.write('1', '0', '1', this.USED + '102' + this.NULL_TERMINATOR);
+		krnHddDriver.write('1', '0', '2', this.USED + '103' + this.NULL_TERMINATOR);
+		krnHddDriver.write('1', '0', '3', this.USED + '104' + this.NULL_TERMINATOR);
+		krnHddDriver.write('1', '0', '4', this.USED + '---' + this.NULL_TERMINATOR);
+		
+		// Track usage statistics.
+		this.nFiles += 1;
+		this.usedBlocks += 5;
+	}
+	
+	this.writeToSwap = function(data) {
+		
+		var buffer = '';
+	
+		// Convert the data from an array to a string.
+		for (var offset=0; offset < data.length; offset+=1) {
+			buffer += data[offset];
+		}
+	
+		var blkAddr = this.SWAP_FILE_BEGIN;
+		var offset = 0;
+		
+		// Write the data to the swap file.
+		while (blkAddr !== this.NULL_ADDRESS) {
+			
+			var nextBlkAddr = (parseInt(blkAddr) + 1).toString();
+			krnHddDriver.write(blkAddr.charAt(0), blkAddr.charAt(1), blkAddr.charAt(2), this.USED + nextBlkAddr + buffer.substr(offset, this.BYTES_PER_BLOCK));
+			offset += this.BYTES_PER_BLOCK;
+			
+			if (nextBlkAddr === this.SWAP_FILE_END) {
+				blkAddr = this.NULL_ADDRESS;
+			} else {
+				blkAddr = nextBlkAddr;
+			}
+		}
 	}
 	
 	/**

@@ -22,7 +22,7 @@
 function hostInit()
 {
 	// Get a global reference to the canvas.  TODO: Move this stuff into a Display Device Driver, maybe?
-    _Canvas = document.getElementById('display');
+    _Canvas = document.getElementById('consoleDisplay');
 
 	// Get a global reference to the drawing context.
 	_DrawingContext = _Canvas.getContext('2d');
@@ -88,7 +88,7 @@ function hostBtnStartOS_click(btn)
     document.getElementById("btnReset").disabled = false;
 
     // .. set focus on the OS console display ...
-    document.getElementById("display").focus();
+    document.getElementById("consoleDisplay").focus();
 
     // ... create and initialize the CPU ...
     _CPU = new Cpu();

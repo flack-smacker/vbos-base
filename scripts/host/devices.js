@@ -51,7 +51,7 @@ function hostOnKeypress(event)
 {
     // The canvas element CAN receive focus if you give it a tab index, which we have.
     // Check that we are processing keystrokes only from the canvas's id (as set in index.html).
-    if (event.target.id == "display")
+    if (event.target.id == "consoleDisplay")
     {
         event.preventDefault();
         // Note the pressed key code in the params (Mozilla-specific).

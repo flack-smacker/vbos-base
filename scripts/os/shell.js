@@ -191,6 +191,13 @@ function shellInit() {
     sc.description = "- Initializes the file system.";
     sc.function = formatFs;
     this.commandList[this.commandList.length] = sc;
+	
+	// ls - Lists all the files stored.
+    sc = new ShellCommand();
+    sc.command = "ls";
+    sc.description = "- List all user files.";
+    sc.function = listFiles;
+    this.commandList[this.commandList.length] = sc;
     
     // Display the initial prompt.
     this.putPrompt();
@@ -304,8 +311,10 @@ function shellExecute(fn, args)
 * Schedules all resident processes for execution.
 */
 function shellRunAll() {
-	for (var pid = 0; pid < MAX_PROCESSES; pid+=1) { // Enumerate all possible process IDs (there can only be three).
-		if (_KernelResidentList.hasOwnProperty(pid)) { // If the PID has an associated process then execute it.
+	// Enumerate all possible process IDs.
+	for (var pid = 0; pid < MAX_PROCESSES; pid+=1) {
+		// If the PID has an associated process then execute it.
+		if (_KernelResidentList.hasOwnProperty(pid)) {
 			executeProcess([pid]);
 		}
 	}
@@ -375,12 +384,17 @@ function shellKillPs(args) {
 			krnTerminateProcess(_KernelResidentList[pid]); // Terminate it.
 			return;
 		}
-	} else { // Check if the process is on the ready queue. 
-		for (var i = 0; i < _KernelReadyQueue.getSize(); i+=1) { // Enumerate over all processes on the ready queue.
-			if (_KernelReadyQueue.q[i] === pid) { // If this is the specified process.
-				delete _KernelReadyQueue.q[i] // Remove it from the ready queue.
-				krnTerminateProcess(_KernelResidentList[pid]); // Terminate it.
-				break; // Break out of the for loop.
+	} else { // Check if the process is on the ready queue.
+		
+		// Enumerate over all processes on the ready queue.
+		for (var i = 0; i < _KernelReadyQueue.getSize(); i+=1) {
+			
+			// If this is the specified process.
+			if (_KernelReadyQueue.q[i] === pid) {
+				// Remove it from the ready queue.
+				delete _KernelReadyQueue.q[i]
+				// Terminate it.
+				krnTerminateProcess(_KernelResidentList[pid]);
 				return;
 			}
 		}
@@ -660,13 +674,9 @@ function loadProgram() {
         // create a new process
         var pid = krnNewProcess(src);
 		// Verify that the process was created.
-		if (pid === OUT_OF_MEMORY_ERROR) {
-			return; // Half further processing of the command immediately.
+		if (typeof pid !== 'undefined') {
+			_StdOut.putText("PID " + pid);
 		}
-        // refresh the memory display device
-        refreshDisplay();
-        // return pid to the console
-        _StdOut.putText("PID " + pid);
     } else { // Its not valid. Inform the user.
         _StdOut.putText("  Invalid token found in program.");
         _StdOut.advanceLine();
@@ -771,4 +781,11 @@ function deleteFile(args) {
 function formatFs(args) {
 	krnFormatFs()
 	_StdOut.putText("File system format was successful.");
+}
+
+/**
+ * Lists all files stored on the file system.
+ */
+function listFiles() {
+	krnListFiles();
 }

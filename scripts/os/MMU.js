@@ -37,6 +37,7 @@ function MMU(memory) {
         if (_Mode === KERNEL_MODE) { // This is a kernel-mode process...
 			// ...just do it.
             this.memory.write(address, ("0" + byteVal.toString(16)).substr(-2));
+			krnMemDispDriver.updateDisplay(address, ("0" + byteVal.toString(16)).substr(-2));
         } else { // This is a user-mode process...
 			// Get the base address of the requesting process.
 			var baseAddr = this.memoryMap[_ActiveProcess.PID][0];
@@ -44,6 +45,7 @@ function MMU(memory) {
 			if (this.rangeCheck(baseAddr + address)) {
 				// Add the baseAddr to the address and perform the write.
 				this.memory.write(baseAddr + address, ("0" + byteVal.toString(16)).substr(-2));
+				krnMemDispDriver.updateDisplay(baseAddr + address, ("0" + byteVal.toString(16)).substr(-2));
 			} else { // The range check failed.
 				_KernelInterruptQueue.enqueue(new Interrupt(MEMORY_ERROR_IRQ, [ACCESS_VIOLATION_ERROR, _ActiveProcess.PID]));
 			}
@@ -76,15 +78,12 @@ function MMU(memory) {
 		}
     };
 
-	
-	// return this.memory.readByte(address + offset);
     /**
      * Allocates a block of 256 bytes to the process specified by pid and returns the address of the first free byte.
      *
      * @param pid the process id of the requesting process
      */
     this.allocate = function(pid) {
-
         // Determine if there is any free memory.
         if (this.freeList.length != 0) {
             // Get the start and end address of the range.

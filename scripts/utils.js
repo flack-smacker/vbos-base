@@ -43,3 +43,29 @@ function is_html5_storage_supported() {
 		return false;
 	  }
 }
+
+function showPartition(event, n) {
+	
+	/** Highlight the selected tab. **/
+	var links = document.getElementById('tabs').getElementsByTagName('a');
+	
+	for (var i=0; i < links.length; i+=1) {
+		links[i].style.backgroundColor = 'white';
+	}
+		
+	event.target.style.borderBottom = 'none';
+	
+	/** Display the selected tab. **/
+	var partitionId = 'partition' + n;
+	
+	var tables = document.getElementById('memoryDisplay').getElementsByTagName('table');
+	
+	for (var i=0; i < tables.length; i+=1) { 
+		if (tables[i].id === partitionId) {
+			tables[i].style.display = 'block';
+		} else {
+			tables[i].style.display = 'none';
+		}
+	}
+}
+

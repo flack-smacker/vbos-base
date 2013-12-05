@@ -23,8 +23,9 @@ var MEMORY_MAX = 768; // Size of main memory in bytes.
 var ADDRESS_SPACE_MAX = 256; // Address space size in bytes.
 
 /* Process */
-var MAX_PROCESSES = 3 // The maximum number of processes that can exist on the system.
+var MAX_PROCESSES = 4 // The maximum number of processes that can exist on the system.
 var DEFAULT_PRIORITY = 1 // The default priority given to a newly created process.
+var SWAP_FILE = -100;
 
 /* HDD */
 var IO_CREATE_FILE = 0;
@@ -64,8 +65,11 @@ var _FontHeightMargin = 4; // Additional space added to font size when advancing
 
 /* Software */
 var _Mode = KERNEL_MODE;   // 0 = Kernel Mode, 1 = User Mode. 
-var _MemoryManager = null; // kernel-level memory manager
-var _FileSystem = null;
+var _MemoryManager = null; // A global handle to the kernel's memory management module.
+var _FileSystem = null; // A global handle to the kernel's file system module.
+var _SwapFile = '$swap'; // A global handle to the name of the swap file.
+var _SwapFileInUse = false;  // Indicates whether the swap file is currently in use.
+var _ProcessCount = 0; // Tracks the number of loaded processes.
 
 // Global Device Driver Handles
 var krnKeyboardDriver = null;
