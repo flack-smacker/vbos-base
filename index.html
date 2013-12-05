@@ -27,11 +27,13 @@
     <script type="text/javascript" src="scripts/os/deviceDriverKeyboard.js"></script>
     <script type="text/javascript" src="scripts/os/deviceDriverStatusBar.js"></script>
     <script type="text/javascript" src="scripts/os/deviceDriverMemoryDisplay.js"></script>
+	<script type="text/javascript" src="scripts/os/deviceDriverHDD.js"></script>
     <script type="text/javascript" src="scripts/os/queue.js"></script>
     <script type="text/javascript" src="scripts/os/history.js"></script>
     <script type="text/javascript" src="scripts/os/shell.js"></script>
     <script type="text/javascript" src="scripts/os/MMU.js"></script>
 	<script type="text/javascript" src="scripts/os/scheduler.js"></script>
+	<script type="text/javascript" src="scripts/os/filesystem.js"></script>
     <script type="text/javascript" src="scripts/os/kernel.js"></script>
 
 
@@ -74,7 +76,7 @@
         </div>
 
         <div id="divConsole" style="margin:4px; width:500px; height:500px; float:left">
-            <canvas id="display"
+            <canvas id="consoleDisplay"
                     width="500px"
                     height="500px"
                     tabindex="3">
@@ -104,48 +106,62 @@
             </label>
         </div>
 
-        <div id="divUserProgramInput">
-            <label>
-                User Program Input
-                <br>
-                <textarea name="taProgramInput"
-                          id  ="taProgramInput"
-                          rows="8"
-                          cols="60"
-                        ></textarea>
-            </label>
-        </div>
-
-        <div id="cpuDisplay">
-
+        <div id="cpuDisplay" style="width:175px; float:left;">
             <label>
                 CPU Display
                 <br>
                 <textarea name="taCpuDisplay"
                           id  ="taCpuDisplay"
                           rows="6"
-                          cols="15"
+                          cols="18"
                         ></textarea>
             </label>
-
-            <div id="memoryDisplay" style="width:275px; height:255px; overflow: auto; float:right;">
-                <label>
-                    <table id="memoryTable">
-                    </table>
-                </label>
-            </div>
-
-            <label style="float:left;">
-                PCB Display
+		</div>
+		
+		<div id="divPCB" style="width:50%; float:left;">
+			<label>
+				Ready Queue
+              <br>
+				<textarea	name="taPCBDisplay"
+							id="taPCBDisplay"
+							rows="6"
+							cols="30"
+						></textarea>
+			</label>
+		</div> 
+		
+		<p style="display: block; clear:both; margin: 0px 0px 2px 0px;"> Main Memory </p>
+		
+		<div id="memoryDisplay" style="float:left">
+		
+			<a href="#" onclick="showPartition(event, 0)">0-255</a></li>
+			<a href="#" onclick="showPartition(event, 1)">256-511</a></li>
+			<a href="#" onclick="showPartition(event, 2)">512-767</a></li>
+			
+			<table id="partition0">
+            </table>
+				  
+			<table id="partition1">
+            </table>
+				  
+			<table id="partition2">
+            </table>
+        </div>
+		
+		<div id="divUserProgramInput" style="float:left; margin-left: 10px;">
+            <label>
+                Program Input
                 <br>
-                <textarea name="taPCBDisplay"
-                          id  ="taPCBDisplay"
+                <textarea name="taProgramInput"
+                          id  ="taProgramInput"
                           rows="6"
-                          cols="15"
+                          cols="18"
                         ></textarea>
             </label>
         </div>
+		
     </div>
+    
     <div id="footer" style="clear:both; position:relative; top:40px">
         <p class="footerText">
             <br>
@@ -158,4 +174,4 @@
 </div>
 
 </body>
-</html>	
+</html>

@@ -35,3 +35,38 @@ function rot13(str) {   // An easy-to understand implementation of the famous an
     }
     return retVal;
 }
+
+function is_html5_storage_supported() {
+	  try {
+		return 'localStorage' in window && window['localStorage'] !== null;
+	  } catch (e) {
+		return false;
+	  }
+}
+
+function showPartition(event, n) {
+	
+	/** Highlight the selected tab. **/
+	var links = document.getElementById('memoryDisplay').getElementsByTagName('a');
+	
+	// Reset all unselected tabs back to the 'unselected' color.
+	for (var i=0; i < links.length; i+=1) {
+		links[i].style.color = 'black';
+	}
+	// Mark the selected tab.
+	event.target.style.color = 'red';
+	
+	// Display the selected tab. 
+	var partitionId = 'partition' + n;
+	
+	var tables = document.getElementById('memoryDisplay').getElementsByTagName('table');
+	
+	for (var i=0; i < tables.length; i+=1) { 
+		if (tables[i].id === partitionId) {
+			tables[i].style.display = 'inline';
+		} else {
+			tables[i].style.display = 'none';
+		}
+	}
+}
+

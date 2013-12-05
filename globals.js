@@ -8,20 +8,32 @@
    Operating System Concepts 8th edition by Silberschatz, Galvin, and Gagne.  ISBN 978-0-470-12872-5
    ------------ */
 
-//
-// Global CONSTANTS
-//
+
+/** Global Constants **/
+
+/* Version Information */
 var APP_NAME = "VBOS";
 var APP_VERSION = "0.01";
 
+/* CPU */
 var CPU_CLOCK_INTERVAL = 100;   // This is in ms, or milliseconds, so 1000 = 1 second.
 
+/* Memory */
 var MEMORY_MAX = 768; // Size of main memory in bytes.
 var ADDRESS_SPACE_MAX = 256; // Address space size in bytes.
 
-var MAX_PROCESSES = 3 // The maximum number of processes that can exist on the system.
+/* Process */
+var MAX_PROCESSES = 4 // The maximum number of processes that can exist on the system.
 var DEFAULT_PRIORITY = 1 // The default priority given to a newly created process.
+var SWAP_FILE = -100;
 
+/* HDD */
+var IO_CREATE_FILE = 0;
+var IO_READ_FILE = 1;
+var IO_WRITE_FILE = 2;
+var IO_DELETE_FILE = 3;
+
+/* Interrupt Codes */
 var TIMER_IRQ = 0;  // Pages 23 (timer), 9 (interrupts), and 561 (interrupt priority).
                     // NOTE: The timer is different from hardware/host clock pulses. Don't confuse these.
 var KEYBOARD_IRQ = 1;
@@ -29,34 +41,39 @@ var SYSTEM_CALL_IRQ = 2; // Used by a process to to request a system service.
 var PROCESS_COMPLETE_IRQ = 3; // Used by a process to indicate successful termination.
 var MEMORY_ERROR_IRQ = 4; // The interrupt code used to specify a memory related error.
 var CONTEXT_SWITCH_IRQ = 5; // The interrupt code used by the CPU to specify a context switch.
-
 var ACCESS_VIOLATION_ERROR = -2; // Indicates that a process attempted to access a restricted/invalid memory location.
 var OUT_OF_MEMORY_ERROR = -1; // Indicates a failed allocation attempt by the kernel.
 
+/* Kernel */
 var KERNEL_MODE = 0;
 var USER_MODE = 1;
 
-//
-// Global Variables
-//
-var _CPU = null;
-
-var _MainMemory = null;
-var _MemoryManager = null;
-
-var _OSclock = 0;       // Page 23.
-
-var _Mode = KERNEL_MODE;   // 0 = Kernel Mode, 1 = User Mode. 
-
-var _Canvas = null;               // Initialized in hostInit().
-var _DrawingContext = null;       // Initialized in hostInit().
-var _DefaultFontFamily = "sans";  // Ignored, I think. The was just a place-holder in 2008, but the HTML canvas may have use for it.
+/* Hardware */
+var _CPU = null; // CPU
+var _OSclock = 0; // CLOCK COUNTER
+var _MainMemory = null; // RAM
+var _statusBar = null; // STATUS BAR
+var _memoryDisplayDevice = null; // MEMORY DISPLAY
+var _userInputArea = null; // PROGRAM INPUT AREA
+var _Canvas = null; // DISPLAY DEVICE
+var _DrawingContext = null; 
+var _DefaultFontFamily = "sans";
 var _DefaultFontSize = 13;
-var _FontHeightMargin = 4;        // Additional space added to font size when advancing a line.
+var _FontHeightMargin = 4; // Additional space added to font size when advancing a line.
 
-var _statusBar = null;			  // Initialized in hostInit();
-var _memoryDisplayDevice = null;  // Initialized in hostInit();
-var _userInputArea = null;		  // Initialized in hostInit();
+/* Software */
+var _Mode = KERNEL_MODE;   // 0 = Kernel Mode, 1 = User Mode. 
+var _MemoryManager = null; // A global handle to the kernel's memory management module.
+var _FileSystem = null; // A global handle to the kernel's file system module.
+var _SwapFile = '$swap'; // A global handle to the name of the swap file.
+var _SwapFileInUse = false;  // Indicates whether the swap file is currently in use.
+var _ProcessCount = 0; // Tracks the number of loaded processes.
+
+// Global Device Driver Handles
+var krnKeyboardDriver = null;
+var krnStatusBarDriver = null
+var krnMemDispDriver = null;
+var krnHddDriver = null;
 
 // Default the OS trace to be on.
 var _Trace = true;

@@ -22,7 +22,7 @@
 function hostInit()
 {
 	// Get a global reference to the canvas.  TODO: Move this stuff into a Display Device Driver, maybe?
-    _Canvas = document.getElementById('display');
+    _Canvas = document.getElementById('consoleDisplay');
 
 	// Get a global reference to the drawing context.
 	_DrawingContext = _Canvas.getContext('2d');
@@ -37,7 +37,7 @@ function hostInit()
 	_userInputArea = document.getElementById("taProgramInput");
 
     // Get a global reference to the memory display device.
-    _memoryDisplayDevice = document.getElementById("memoryTable");
+    _memoryDisplayDevice = document.getElementById("memoryDisplay");
 
 	// Clear the log text box.
 	document.getElementById("taLog").value="";
@@ -88,19 +88,20 @@ function hostBtnStartOS_click(btn)
     document.getElementById("btnReset").disabled = false;
 
     // .. set focus on the OS console display ...
-    document.getElementById("display").focus();
+    document.getElementById("consoleDisplay").focus();
 
-    // ... Create and initialize the CPU ...
+    // ... create and initialize the CPU ...
     _CPU = new Cpu();
     _CPU.init();
 
-    // ... Create and initialize main memory ...
+    // ... create and initialize main memory ...
     _MainMemory = new MainMemory(MEMORY_MAX);
     _MainMemory.clear(0, MEMORY_MAX);
 
     // ... then set the host clock pulse ...
     _hardwareClockID = setInterval(hostClockPulse, CPU_CLOCK_INTERVAL);
-    // .. and call the OS Kernel Bootstrap routine.
+    
+	// .. and call the OS Kernel Bootstrap routine.
     krnBootstrap();
 }
 

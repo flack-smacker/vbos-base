@@ -10,8 +10,8 @@
 function CLIconsole() {
 
 	// Properties
-    this.CurrentFont      = _DefaultFontFamily;
-    this.CurrentFontSize  = _DefaultFontSize;
+    this.CurrentFont = _DefaultFontFamily;
+    this.CurrentFontSize = _DefaultFontSize;
     this.CurrentXPosition = 0;
     this.CurrentYPosition = _DefaultFontSize;
 	this.LineHeight = _DefaultFontSize + _FontHeightMargin;
@@ -54,7 +54,9 @@ function CLIconsole() {
 	this.CurrentYPosition -= scrollY;
     };
 	
-	/* Clear user input from the console and buffer. */
+	/**
+	 * Clear user input from the console and buffer. 
+	 */
 	this.clearUserInput = function() {
 		// erase the entire buffer and console
 		// Calculate the width of the characters to be deleted.
@@ -143,7 +145,10 @@ function CLIconsole() {
            }
        }
     };
-
+	
+	/**
+	 * Outputs the specified text to standard output, which in our case is the canvas.
+	 */
     this.putText = function(text) {
        // My first inclination here was to write two functions: putChar() and putString().
        // Then I remembered that JavaScript is (sadly) untyped and it won't differentiate
@@ -153,21 +158,31 @@ function CLIconsole() {
        if (text !== "")
        {
 			/** Code for handling word wrapping **/
-			var offset = _DrawingContext.measureText(this.CurrentFont, this.CurrentFontSize, text); // Calculate the width...
-			// ...of the current output plus the width of the specified text to be drawn.
+			var words = text.split(' '); // Parse the text into words.
 			
-			// Check if the total width exceeds the width of the canvas.
-			if ((offset + this.CurrentXPosition) > _Canvas.width) {
-				// Advance the cursor to the next line and draw the text as normal.
-				this.advanceLine();
+			for (var i=0; i < words.length; i+=1) {
+				
+				// A hack to solve the issue of appending an extra space to the end of the text line.
+				if ( !((i + 1) === words.length) ) { // If this  is not the last word to be drawn.
+					// ... append a space.
+					words[i] += ' ';
+				}
+				
+				// Calculate the width of the word to be drawn.
+				var word_width = _DrawingContext.measureText(this.CurrentFont, this.CurrentFontSize, words[i]);
+			
+				// Check if the text + the current x position will exceed the canvas width.
+				if ((word_width + this.CurrentXPosition) > _Canvas.width) {
+					// Advance the cursor to the next line and draw the text as normal.
+					this.advanceLine();
+				}
+			
+				// Draw the text at the current X and Y coordinates.
+				_DrawingContext.drawText(this.CurrentFont, this.CurrentFontSize, this.CurrentXPosition, this.CurrentYPosition, words[i]);
+				
+				// Advance the cursor
+				this.CurrentXPosition = this.CurrentXPosition + word_width;
 			}
-			/** END WORD WRAP CODE **/
-			
-           // Draw the text at the current X and Y coordinates.
-           _DrawingContext.drawText(this.CurrentFont, this.CurrentFontSize, this.CurrentXPosition, this.CurrentYPosition, text);
-           // Move the current X position.
-           var offset = _DrawingContext.measureText(this.CurrentFont, this.CurrentFontSize, text);
-           this.CurrentXPosition = this.CurrentXPosition + offset;
        }
     };
 
