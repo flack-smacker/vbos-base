@@ -203,6 +203,11 @@ function FileSystem() {
 	
 	this.deleteFile = function(filename) {
 		
+		if (filename === _SwapFile) {
+			_StdOut.putText("Cannot delete '" + filename + "'. You do not have sufficient privileges.");
+			return;
+		}
+		
 		// Get the address of the directory entry for this file from the file index.
 		var location = this.fileIndex[filename];
 		

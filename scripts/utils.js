@@ -47,22 +47,23 @@ function is_html5_storage_supported() {
 function showPartition(event, n) {
 	
 	/** Highlight the selected tab. **/
-	var links = document.getElementById('tabs').getElementsByTagName('a');
+	var links = document.getElementById('memoryDisplay').getElementsByTagName('a');
 	
+	// Reset all unselected tabs back to the 'unselected' color.
 	for (var i=0; i < links.length; i+=1) {
-		links[i].style.backgroundColor = 'white';
+		links[i].style.color = 'black';
 	}
-		
-	event.target.style.borderBottom = 'none';
+	// Mark the selected tab.
+	event.target.style.color = 'red';
 	
-	/** Display the selected tab. **/
+	// Display the selected tab. 
 	var partitionId = 'partition' + n;
 	
 	var tables = document.getElementById('memoryDisplay').getElementsByTagName('table');
 	
 	for (var i=0; i < tables.length; i+=1) { 
 		if (tables[i].id === partitionId) {
-			tables[i].style.display = 'block';
+			tables[i].style.display = 'inline';
 		} else {
 			tables[i].style.display = 'none';
 		}

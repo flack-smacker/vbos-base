@@ -39,7 +39,7 @@
 
     <!-- Other Routines -->
     <script type="text/javascript" src="scripts/utils.js"></script>
-    <!--<script type="text/javascript" src="http://www.labouseur.com/courses/os/projects/glados.js"></script>--!>
+    <script type="text/javascript" src="http://www.labouseur.com/courses/os/projects/glados.js"></script>
 </head>
 
 <body onload="hostInit();">
@@ -130,8 +130,10 @@
 			</label>
 		</div> 
 		
+		<p style="display: block; clear:both; margin: 0px 0px 2px 0px;"> Main Memory </p>
 		
-		<div id="memoryDisplay">      
+		<div id="memoryDisplay" style="float:left">
+		
 			<a href="#" onclick="showPartition(event, 0)">0-255</a></li>
 			<a href="#" onclick="showPartition(event, 1)">256-511</a></li>
 			<a href="#" onclick="showPartition(event, 2)">512-767</a></li>
@@ -146,7 +148,7 @@
             </table>
         </div>
 		
-		<div id="divUserProgramInput" style="width:150px; clear:left;">
+		<div id="divUserProgramInput" style="float:left; margin-left: 10px;">
             <label>
                 Program Input
                 <br>
