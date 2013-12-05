@@ -327,7 +327,7 @@ function shellSetQuantum(args) {
 	// We only care about the first element of the args array.
 	var number = Number(args[0]);
 	
-	if (typeof number !== 'number' || args < 0) { // Verify that the user entered a number.
+	if (typeof number !== 'number' || args < 0 || args.length === 0) { // Verify that the user entered a number.
 		_StdOut.putText("Invalid quantum value. Must be an integer > 0.");
 	} else { // Set the quantum and inform the user.
 		_Quantum = number;
